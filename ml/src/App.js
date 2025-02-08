@@ -1,9 +1,7 @@
 import './App.css';
 
 import React, { useRef, useEffect, useState } from "react";
-import * as tf from "@tensorflow/tfjs";
 import * as poseDetection from "@tensorflow-models/pose-detection";
-import '@tensorflow/tfjs-backend-webgl';
 import Webcam from "react-webcam";
 
 
@@ -17,15 +15,15 @@ function App() {
 
   const model = poseDetection.SupportedModels.BlazePose;
     const detectorConfig = {
-      runtime: 'tfjs',
+      runtime: "mediapipe",
+      modelType: "full",
       enableSmoothing: true,
-      modelType: 'full'
+      upperBodyOnly: true,
+      solutionPath: "https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/"
     };
 
   useEffect(() => {
     const runBlazePose = async() => {
-      await tf.setBackend("webgl");
-      await tf.ready();
       const newDetector = await poseDetection.createDetector(model, detectorConfig);
       setDetector(newDetector);
     };
@@ -38,7 +36,6 @@ function App() {
       if (detector) {
         detector.dispose();
       }
-      tf.dispose();
     };
   }, []);
 
@@ -70,7 +67,7 @@ function App() {
     if (poses.length > 0) {
       console.log(poses);
       const keypoints = poses[0].keypoints;
-      drawResult(keypoints, video);
+      drawPose(keypoints, video);
       const score = calculatePostureScore(keypoints);
       setPostureScore(score);
     }
@@ -103,25 +100,94 @@ function App() {
     return Math.max(score, 0);
   };
 
-  const drawResult = (keypoints, video) => {
+  const drawPose = (keypoints, video) => {
     const ctx = canvasRef.current.getContext("2d");
     const videoWidth = video.videoWidth;
     const videoHeight = video.videoHeight;
 
+    // Match canvas to video size
     canvasRef.current.width = videoWidth;
     canvasRef.current.height = videoHeight;
+
+    // Clear any previous render
     ctx.clearRect(0, 0, videoWidth, videoHeight);
 
-    keypoints.forEach((kp) => {
-      // If a keypoint has a low confidence score, skip drawing it
-      if (kp.score > 0.4) {
+    // **Mirror the drawing** so it matches the mirrored webcam
+    // We'll flip horizontally around the center:
+    ctx.save(); // save current state
+    ctx.scale(-1, 1); // flip horizontally
+    ctx.translate(-videoWidth, 0); // shift back so we can draw in the correct place
+
+    // Draw the skeleton
+    drawSkeleton(keypoints, ctx);
+    // Draw the keypoints
+    drawKeypoints(keypoints, ctx);
+
+    // Restore so future draws aren't flipped
+    ctx.restore();
+  };
+
+  // Color-coded keypoints (like TF examples)
+  const drawKeypoints = (keypoints, ctx) => {
+    // BlazePose indices by "side" (left, right, center)
+    const keypointIndices = poseDetection.util.getKeypointIndexBySide(
+      poseDetection.SupportedModels.BlazePose
+    );
+    // We'll choose a radius & line width
+    const radius = 5;
+    ctx.lineWidth = 2;
+
+    // Middle (nose, etc.)
+    ctx.fillStyle = "Red";
+    ctx.strokeStyle = "White";
+    keypointIndices.middle.forEach((i) => {
+      const kp = keypoints[i];
+      if (kp.score > 0.5) drawCircle(ctx, kp.x, kp.y, radius);
+    });
+
+    // Left side (eyes, shoulder, etc.)
+    ctx.fillStyle = "Green";
+    ctx.strokeStyle = "White";
+    keypointIndices.left.forEach((i) => {
+      const kp = keypoints[i];
+      if (kp.score > 0.5) drawCircle(ctx, kp.x, kp.y, radius);
+    });
+
+    // Right side
+    ctx.fillStyle = "Orange";
+    ctx.strokeStyle = "White";
+    keypointIndices.right.forEach((i) => {
+      const kp = keypoints[i];
+      if (kp.score > 0.5) drawCircle(ctx, kp.x, kp.y, radius);
+    });
+  };
+
+  const drawSkeleton = (keypoints, ctx) => {
+    const adjacency = poseDetection.util.getAdjacentPairs(
+      model
+    );
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+
+    adjacency.forEach(([i, j]) => {
+      const kp1 = keypoints[i];
+      const kp2 = keypoints[j];
+      if (kp1.score > 0.5 && kp2.score > 0.5) {
         ctx.beginPath();
-        ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = "red";
-        ctx.fill();
+        ctx.moveTo(kp1.x, kp1.y);
+        ctx.lineTo(kp2.x, kp2.y);
+        ctx.stroke();
       }
     });
   };
+
+  const drawCircle = (ctx, x, y, r) => {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+  };
+
 
   return (
     <div className="App">
