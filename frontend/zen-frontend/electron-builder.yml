@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: zen-frontend
+appId: com.zen-posture.app
+productName: Zen Posture
 directories:
   buildResources: build
 files:

@@ -57,6 +57,7 @@ function Statistics() {
 
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: false
@@ -78,7 +79,10 @@ function Statistics() {
           color: 'rgba(255, 255, 255, 0.05)'
         },
         ticks: {
-          color: 'rgba(255, 255, 255, 0.6)'
+          color: 'rgba(255, 255, 255, 0.6)',
+          font: {
+            size: 11
+          }
         }
       },
       x: {
@@ -86,7 +90,10 @@ function Statistics() {
           color: 'rgba(255, 255, 255, 0.05)'
         },
         ticks: {
-          color: 'rgba(255, 255, 255, 0.6)'
+          color: 'rgba(255, 255, 255, 0.6)',
+          font: {
+            size: 11
+          }
         }
       }
     }
@@ -106,45 +113,51 @@ function Statistics() {
         <p>Track your posture improvement over time</p>
       </div>
 
-      <div className="stats-overview">
-        <div className="stat-card">
-          <BiTrendingUp className="stat-card-icon" />
-          <div className="stat-card-content">
-            <h3>Average Score</h3>
-            <div className="stat-card-value">{weeklyStats.averageScore}%</div>
-            <div className="stat-card-trend positive">{weeklyStats.improvement} this week</div>
+      <div className="statistics-grid">
+        <div className="chart-section">
+          <div className="chart-container">
+            <div className="chart-header">
+              <h2>Weekly Posture Score</h2>
+              <div className="chart-legend">
+                <BiBody className="chart-legend-icon" />
+                <span>Posture Quality</span>
+              </div>
+            </div>
+            <div className="chart-wrapper">
+              <Line data={chartData} options={chartOptions} />
+            </div>
           </div>
         </div>
 
-        <div className="stat-card">
-          <BiTime className="stat-card-icon" />
-          <div className="stat-card-content">
-            <h3>Daily Average</h3>
-            <div className="stat-card-value">{weeklyStats.averageTime}h</div>
-            <div className="stat-card-subtitle">Time tracked</div>
-          </div>
-        </div>
+        <div className="stats-section">
+          <div className="stats-overview">
+            <div className="stat-card">
+              <BiTrendingUp className="stat-card-icon" />
+              <div className="stat-card-content">
+                <h3>Average Score</h3>
+                <div className="stat-card-value">{weeklyStats.averageScore}%</div>
+                <div className="stat-card-trend positive">{weeklyStats.improvement} this week</div>
+              </div>
+            </div>
 
-        <div className="stat-card">
-          <BiCalendar className="stat-card-icon" />
-          <div className="stat-card-content">
-            <h3>Days Active</h3>
-            <div className="stat-card-value">{weeklyStats.daysTracked}</div>
-            <div className="stat-card-subtitle">This week</div>
-          </div>
-        </div>
-      </div>
+            <div className="stat-card">
+              <BiTime className="stat-card-icon" />
+              <div className="stat-card-content">
+                <h3>Daily Average</h3>
+                <div className="stat-card-value">{weeklyStats.averageTime}h</div>
+                <div className="stat-card-subtitle">Time tracked</div>
+              </div>
+            </div>
 
-      <div className="chart-container">
-        <div className="chart-header">
-          <h2>Weekly Posture Score</h2>
-          <div className="chart-legend">
-            <BiBody className="chart-legend-icon" />
-            <span>Posture Quality</span>
+            <div className="stat-card">
+              <BiCalendar className="stat-card-icon" />
+              <div className="stat-card-content">
+                <h3>Days Active</h3>
+                <div className="stat-card-value">{weeklyStats.daysTracked}</div>
+                <div className="stat-card-subtitle">This week</div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="chart-wrapper">
-          <Line data={chartData} options={chartOptions} />
         </div>
       </div>
     </div>

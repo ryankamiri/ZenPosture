@@ -3,14 +3,36 @@ import { IoNotifications, IoNotificationsOff } from 'react-icons/io5'
 import { BiBody } from 'react-icons/bi'
 import { FiActivity, FiClock, FiCheckCircle } from 'react-icons/fi'
 import WebcamView from '../components/WebcamView'
+import { useNavigate } from 'react-router-dom'
 
 function Home() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [showStats, setShowStats] = useState(false)
+  const navigate = useNavigate()
+
+  const sendTestNotification = () => {
+    if (!("Notification" in window)) {
+      alert("This browser does not support desktop notifications")
+      return
+    }
+
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        const notification = new Notification("Time for Posture Exercises!", {
+          body: "Let's do some stretches to maintain good posture 🧘‍♂️",
+          silent: false
+        })
+
+        notification.onclick = () => {
+          navigate('/exercises')
+          window.focus()
+        }
+      }
+    })
+  }
 
   const toggleNotifications = () => {
     setNotificationsEnabled(!notificationsEnabled)
-    // TODO: Implement notification toggle logic
   }
 
   const toggleStats = () => {
@@ -55,6 +77,14 @@ function Home() {
             <p className="notification-description">
               You will receive gentle reminders every 60 minutes to check your posture
             </p>
+            
+            <button 
+              className="test-notification-btn"
+              onClick={sendTestNotification}
+              disabled={!notificationsEnabled}
+            >
+              Test Notification
+            </button>
           </div>
 
           <div className="stats-section">

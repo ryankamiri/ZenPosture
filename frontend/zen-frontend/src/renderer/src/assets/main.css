@@ -843,24 +843,46 @@ code {
 }
 
 .statistics-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 3.2rem;
+  margin-bottom: 0.75rem;
   background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .statistics-header p {
   color: var(--text-muted);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
-.stats-overview {
+.statistics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 3rem;
+  grid-template-columns: 1fr 350px;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.chart-section {
+  min-width: 0; /* Prevents chart from overflowing */
+}
+
+.stats-section .stats-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stats-section .stat-card {
+  width: 100%;
 }
 
 .stat-card {
@@ -886,37 +908,50 @@ code {
 }
 
 .stat-card h3 {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--text-muted);
   margin: 0 0 0.5rem 0;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
 }
 
 .stat-card-value {
-  font-size: 1.8rem;
-  font-weight: 700;
+  font-size: 2.4rem;
+  font-weight: 800;
   color: var(--text-color);
   margin-bottom: 0.25rem;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 .stat-card-trend {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: #00b894;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  letter-spacing: -0.01em;
 }
 
 .stat-card-subtitle {
   font-size: 0.9rem;
   color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .chart-container {
   background: var(--card-background);
   border-radius: var(--card-border-radius);
-  padding: 2rem;
+  padding: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  height: 100%;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-header {
@@ -927,17 +962,22 @@ code {
 }
 
 .chart-header h2 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   margin: 0;
   color: var(--text-color);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .chart-legend {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .chart-legend-icon {
@@ -946,59 +986,88 @@ code {
 }
 
 .chart-wrapper {
-  height: 200px;
+  flex: 1;
   position: relative;
-  margin-bottom: -1rem;
+  min-height: 300px;
+  height: 100%;
+  width: 100%;
 }
 
-@media (max-width: 768px) {
-  .statistics-container {
-    padding: 1rem;
-  }
-
-  .statistics-header h1 {
-    font-size: 2rem;
+@media (max-width: 1200px) {
+  .statistics-grid {
+    grid-template-columns: 1fr;
   }
 
   .chart-container {
+    min-height: 350px;
+  }
+
+  .chart-wrapper {
+    min-height: 250px;
+  }
+
+  .stats-section .stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .statistics-header h1 {
+    font-size: 2.8rem;
+  }
+
+  .chart-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .stat-card-value {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .statistics-grid {
+    gap: 1.5rem;
+  }
+
+  .stats-section .stats-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .statistics-header h1 {
+    font-size: 2.4rem;
+  }
+
+  .statistics-header p {
+    font-size: 1.1rem;
+  }
+
+  .chart-container {
+    min-height: 300px;
     padding: 1rem;
   }
 
   .chart-wrapper {
-    height: 250px;
+    min-height: 200px;
   }
 
   .chart-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .chart-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .stat-card-value {
+    font-size: 2rem;
   }
 }
 
-/* Add these animation keyframes at the top with other keyframes */
-@keyframes slideUpFade {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Replace the existing statistics animations with these */
 
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes countUp {
+/* Refined keyframes */
+@keyframes slideUpFadeRefined {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -1009,112 +1078,166 @@ code {
   }
 }
 
-@keyframes fadeIn {
+@keyframes scaleInRefined {
   from {
     opacity: 0;
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
+    transform: scale(1);
   }
 }
 
-/* Update these existing components with animations */
+@keyframes numberCountUp {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-/* Statistics page animations */
+@keyframes chartReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Statistics page refined animations */
 .statistics-header {
-  animation: slideUpFade 0.6s ease-out;
+  animation: slideUpFadeRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.statistics-header h1 {
+  animation: slideUpFadeRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.statistics-header p {
+  animation: slideUpFadeRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s;
+  animation-fill-mode: both;
 }
 
 .stats-overview {
-  animation: slideUpFade 0.6s ease-out 0.2s;
-  animation-fill-mode: both;
+  animation: none; /* Remove container animation */
 }
 
 .stat-card {
-  animation: scaleIn 0.5s ease-out;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  animation: scaleInRefined 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-fill-mode: both;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .stat-card:nth-child(1) {
-  animation-delay: 0.3s;
+  animation-delay: 0.1s;
 }
 
 .stat-card:nth-child(2) {
-  animation-delay: 0.4s;
+  animation-delay: 0.2s;
 }
 
 .stat-card:nth-child(3) {
-  animation-delay: 0.5s;
+  animation-delay: 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.stat-card-icon {
+  animation: scaleInRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-fill-mode: both;
 }
 
 .stat-card-value {
-  animation: countUp 0.8s ease-out 0.6s;
+  animation: numberCountUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-fill-mode: both;
+  animation-delay: 0.3s;
+}
+
+.stat-card-trend,
+.stat-card-subtitle {
+  animation: slideUpFadeRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-fill-mode: both;
+  animation-delay: 0.4s;
+}
+
+/* Chart animations */
+.chart-container {
+  animation: scaleInRefined 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s;
   animation-fill-mode: both;
 }
 
-.chart-container {
-  animation: slideUpFade 0.6s ease-out 0.4s;
+.chart-header {
+  animation: slideUpFadeRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s;
   animation-fill-mode: both;
+}
+
+.chart-wrapper {
+  opacity: 0;
+  animation: chartReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s forwards;
+}
+
+/* Hover state refinements */
+.stat-card {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.stat-card:hover .stat-card-icon {
+  transform: scale(1.1);
+  color: var(--primary-hover);
+}
+
+.chart-container {
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* About page animations */
 .about-header {
-  animation: slideUpFade 0.6s ease-out;
+  animation: slideUpFadeRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .about-section {
-  animation: slideUpFade 0.6s ease-out 0.2s;
+  animation: slideUpFadeRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s;
   animation-fill-mode: both;
 }
 
 .feature-card {
-  animation: scaleIn 0.5s ease-out;
+  animation: scaleInRefined 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   animation-fill-mode: both;
 }
 
-.feature-card:nth-child(1) {
-  animation-delay: 0.3s;
-}
-
-.feature-card:nth-child(2) {
-  animation-delay: 0.4s;
-}
-
-.feature-card:nth-child(3) {
-  animation-delay: 0.5s;
-}
-
-.feature-card:nth-child(4) {
-  animation-delay: 0.6s;
-}
-
-/* Home page animations */
 .welcome-section {
-  animation: slideUpFade 0.6s ease-out;
+  animation: slideUpFadeRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .notification-card {
-  animation: scaleIn 0.5s ease-out 0.2s;
+  animation: scaleInRefined 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s;
   animation-fill-mode: both;
 }
 
 .stats-section {
-  animation: slideUpFade 0.6s ease-out 0.3s;
+  animation: slideUpFadeRefined 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s;
   animation-fill-mode: both;
 }
 
-/* Webcam animations */
 .webcam-container {
-  animation: scaleIn 0.5s ease-out;
+  animation: scaleInRefined 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .webcam-container.minimized {
-  animation: slideUpFade 0.3s ease-out;
+  animation: slideUpFadeRefined 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* Navigation animations */
@@ -1142,7 +1265,7 @@ code {
 /* Chart animations */
 .chart-wrapper {
   opacity: 0;
-  animation: fadeIn 1s ease-out 0.6s forwards;
+  animation: chartReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s forwards;
 }
 
 /* Add smooth transitions for interactive elements */
@@ -1175,4 +1298,230 @@ code {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Add these styles for the test notification button */
+.test-notification-btn {
+  margin-top: 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.test-notification-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+.test-notification-btn:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.test-notification-btn:active {
+  transform: translateY(1px);
+}
+
+/* Exercise styles */
+.exercises-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.exercise-card {
+  background: var(--card-background);
+  border-radius: var(--card-border-radius);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.exercise-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.exercise-media {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #000;
+  position: relative;
+}
+
+.exercise-gif {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.exercise-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.exercise-card:hover .exercise-overlay {
+  opacity: 1;
+}
+
+.complete-exercise-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transform: translateY(10px);
+}
+
+.exercise-card:hover .complete-exercise-btn {
+  transform: translateY(0);
+}
+
+.exercise-card.completed .exercise-overlay {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.exercise-card.completed .complete-exercise-btn {
+  background: var(--success-color);
+  transform: translateY(0);
+}
+
+.exercise-card.completed .exercise-gif {
+  filter: grayscale(50%);
+}
+
+.exercise-content {
+  padding: 1.5rem;
+}
+
+.exercise-content h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.exercise-steps {
+  list-style-position: inside;
+  color: var(--text-muted);
+  margin: 0;
+  padding: 0;
+}
+
+.exercise-steps li {
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.exercise-tip {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.exercise-tip strong {
+  color: var(--primary-color);
+}
+
+/* Exercise progress styles */
+.exercises-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: var(--card-background);
+  border-radius: var(--card-border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.progress-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.progress-icon {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+}
+
+.progress-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.toggle-completed-btn,
+.reset-exercises-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle-completed-btn {
+  background: var(--primary-color);
+  color: white;
+}
+
+.reset-exercises-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+.toggle-completed-btn:hover,
+.reset-exercises-btn:hover {
+  transform: translateY(-2px);
+}
+
+.exercise-card.completed {
+  opacity: 0.7;
+}
+
+.exercise-card.completed .complete-exercise-btn {
+  background: var(--success-color);
+}
+
+.exercise-card.completed .exercise-media::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
 }
