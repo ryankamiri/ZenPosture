@@ -10,40 +10,117 @@ import Webcam from "react-webcam";
 function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
-  const detectorRef = useRef(null);
-  const intervalRef = useRef(null);
+  
+  const [detector, setDetector] = useState(null);
+  const [intervalId, setIntervalId] = useState(null);
   const [postureScore, setPostureScore] = useState(100);
+
+  const model = poseDetection.SupportedModels.BlazePose;
+    const detectorConfig = {
+      runtime: 'tfjs',
+      enableSmoothing: true,
+      modelType: 'full'
+    };
 
   useEffect(() => {
     const runBlazePose = async() => {
       await tf.setBackend("webgl");
       await tf.ready();
-      const model = poseDetection.SupportedModels.BlazePose;
-      const detectorConfig = {
-        runtime: 'tfjs',
-        enableSmoothing: true,
-        modelType: 'full',
-        upperBodyOnly: true
-      };
-      detectorRef.current = await poseDetection.createDetector(model, detectorConfig);
-      intervalRef.current = setInterval(detectPosture, 100);
+      const newDetector = await poseDetection.createDetector(model, detectorConfig);
+      setDetector(newDetector);
     };
     runBlazePose();
 
     return () => {
-      clearInterval(intervalRef.current);
-      if (detectorRef.current) {
-        detectorRef.current.dispose();
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      if (detector) {
+        detector.dispose();
       }
       tf.dispose();
     };
   }, []);
 
-  const detectPosture = async() => {
-    if (typeof webcamRef.current !== "undefined" && webcamRef.current !== null && webcamRef.current.video.readyState === 4) {
-      const video = webcamRef.current.video;
-      const poses = await detectorRef.current.estimatePoses(video);
+  useEffect(() => {
+    if (detector) {
+      const id = setInterval(() => {
+        detectPosture();
+      }, 100);
+      setIntervalId(id);
     }
+  }, [detector]);
+
+  const detectPosture = async() => {
+    if (
+      !webcamRef.current ||
+      !webcamRef.current.video ||
+      webcamRef.current.video.readyState !== 4
+    ) {
+      return;
+    }
+
+    const video = webcamRef.current.video;
+    const videoWidth = webcamRef.current.videoWidth;
+    const videoHeight = webcamRef.current.videoHeight;
+    video.width = videoWidth;
+    video.height = videoHeight;
+
+    const poses = await detector.estimatePoses(video);
+    if (poses.length > 0) {
+      console.log(poses);
+      const keypoints = poses[0].keypoints;
+      drawResult(keypoints, video);
+      const score = calculatePostureScore(keypoints);
+      setPostureScore(score);
+    }
+  };
+
+  const calculatePostureScore = (keypoints) => {
+    const leftShoulder = keypoints.find(p => p.name === "left_shoulder");
+    const rightShoulder = keypoints.find(p => p.name === "right_shoulder");
+    const nose = keypoints.find(p => p.name === "nose");
+    const leftEar = keypoints.find(p => p.name === "left_ear");
+    const rightEar = keypoints.find(p => p.name === "right_ear");
+
+    let score = 100;
+
+    // Forward Head Posture
+    if (nose && leftShoulder && nose.x > leftShoulder.x + 50) {
+      score -= 25;
+    }
+
+    // Shoulder Misalignment
+    if (leftShoulder && rightShoulder && Math.abs(leftShoulder.y - rightShoulder.y) > 20) {
+      score -= 15;
+    }
+
+    // Head Tilt
+    if (leftEar && rightEar && Math.abs(leftEar.y - rightEar.y) > 20) {
+      score -= 20;
+    }
+
+    return Math.max(score, 0);
+  };
+
+  const drawResult = (keypoints, video) => {
+    const ctx = canvasRef.current.getContext("2d");
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+
+    canvasRef.current.width = videoWidth;
+    canvasRef.current.height = videoHeight;
+    ctx.clearRect(0, 0, videoWidth, videoHeight);
+
+    keypoints.forEach((kp) => {
+      // If a keypoint has a low confidence score, skip drawing it
+      if (kp.score > 0.4) {
+        ctx.beginPath();
+        ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = "red";
+        ctx.fill();
+      }
+    });
   };
 
   return (
