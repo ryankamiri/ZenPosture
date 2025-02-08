@@ -105,35 +105,23 @@ function App() {
     const videoWidth = video.videoWidth;
     const videoHeight = video.videoHeight;
 
-    // Match canvas to video size
     canvasRef.current.width = videoWidth;
     canvasRef.current.height = videoHeight;
 
-    // Clear any previous render
     ctx.clearRect(0, 0, videoWidth, videoHeight);
 
-    // **Mirror the drawing** so it matches the mirrored webcam
-    // We'll flip horizontally around the center:
-    ctx.save(); // save current state
-    ctx.scale(-1, 1); // flip horizontally
-    ctx.translate(-videoWidth, 0); // shift back so we can draw in the correct place
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.translate(-videoWidth, 0);
 
-    // Draw the skeleton
     drawSkeleton(keypoints, ctx);
-    // Draw the keypoints
     drawKeypoints(keypoints, ctx);
 
-    // Restore so future draws aren't flipped
     ctx.restore();
   };
 
-  // Color-coded keypoints (like TF examples)
   const drawKeypoints = (keypoints, ctx) => {
-    // BlazePose indices by "side" (left, right, center)
-    const keypointIndices = poseDetection.util.getKeypointIndexBySide(
-      poseDetection.SupportedModels.BlazePose
-    );
-    // We'll choose a radius & line width
+    const keypointIndices = poseDetection.util.getKeypointIndexBySide(model);
     const radius = 5;
     ctx.lineWidth = 2;
 
