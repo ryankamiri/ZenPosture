@@ -21,6 +21,7 @@ function Home() {
   const canvasRef = useRef(null);
   const lastNotificationTimeRef = useRef(0);
   const postureScoreRef = useRef(100);
+  const postureThresholdRef = useRef(70);
 
 
   const [tfModel, setTfModel] = useState(null);
@@ -38,7 +39,6 @@ function Home() {
   const [showStats, setShowStats] = useState(false)
   const navigate = useNavigate()
 
-  // Initialize threshold state from localStorage or default to 70
   const [postureThreshold, setPostureThreshold] = useState(() => {
     const saved = localStorage.getItem('postureThreshold')
     return saved !== null ? parseInt(saved) : 70
@@ -115,7 +115,7 @@ function Home() {
   
     const calculatePostureScore = useCallback(async(keypoints, videoWidth, videoHeight) => {
       if (!tfModel) {
-        return postureScore;
+        return postureScoreRef.current;
       }
   
       const kpMap = {};
@@ -126,7 +126,7 @@ function Home() {
       const required = ["nose", "left_shoulder", "right_shoulder", "left_ear", "right_ear"];
       for (const name of required) {
         if (!kpMap[name] || kpMap[name].score < 0.5) {
-          return postureScore;
+          return postureScoreRef.current;
         }
       }
   
@@ -176,7 +176,7 @@ function Home() {
       xs.dispose();
       output.dispose();
       return intVal;
-    }, [postureScore, tfModel]);
+    }, [tfModel]);
   
   const detectPosture = useCallback(async() => {
     if (
@@ -202,9 +202,9 @@ function Home() {
       
       // Check if 5 seconds have passed since last notification and score is below threshold
       const now = Date.now();
-      if (score < postureThreshold && notificationsEnabled && now - lastNotificationTimeRef.current >= 1000 * 5) {
+      if (score < postureThresholdRef.current && notificationsEnabled && now - lastNotificationTimeRef.current >= 1000 * 5) {
         new Notification("Poor Posture Detected!", {
-          body: "Your posture score is low. Please adjust your sitting position 🪑",
+          body: `Your posture score is low (${score}%). Please adjust your sitting position 🪑`,
           silent: false,
           icon: './officiallogo.png'
         });
@@ -331,7 +331,7 @@ function Home() {
     const interval = setInterval(async () => {
       try {
         await window.api.addPostureSession({
-          score: postureScoreRef.current, // Always gets latest value
+          score: postureScoreRef.current
         });
       } catch (error) {
         console.error("Failed to add posture session:", error);
@@ -353,6 +353,7 @@ function Home() {
   // Add useEffect for threshold persistence
   useEffect(() => {
     localStorage.setItem('postureThreshold', postureThreshold.toString())
+    postureThresholdRef.current = postureThreshold;
   }, [postureThreshold])
 
   // Function to generate random score between 40 and 100
@@ -471,8 +472,8 @@ function Home() {
             </div>
             <input
               type="range"
-              min="50"
-              max="95"
+              min="0"
+              max="100"
               value={postureThreshold}
               className="threshold-slider"
               onChange={(e) => setPostureThreshold(parseInt(e.target.value))}

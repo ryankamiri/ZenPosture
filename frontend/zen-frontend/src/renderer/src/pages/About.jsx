@@ -64,7 +64,7 @@ function About() {
             privacy and transparency. We believe in creating tools that respect user privacy
             while providing valuable health benefits.
           </p>
-          <a href="https://github.com/yourusername/zen-posture" className="github-link">
+          <a href="https://github.com/ryankamiri/ZenPosture" className="github-link">
             <FiGithub /> View on GitHub
           </a>
         </div>
