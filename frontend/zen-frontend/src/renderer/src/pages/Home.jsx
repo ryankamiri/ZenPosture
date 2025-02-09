@@ -19,8 +19,10 @@ function Home() {
 
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
-  const cooldownRef = useRef(false);
-  
+  const lastNotificationTimeRef = useRef(0);
+  const postureScoreRef = useRef(100);
+
+
   const [tfModel, setTfModel] = useState(null);
 
   const [detector, setDetector] = useState(null);
@@ -191,26 +193,17 @@ function Home() {
       await drawPose(keypoints, video);
       const score = await calculatePostureScore(keypoints, videoWidth, videoHeight);
       setPostureScore(score);
+      
+      // Check if 5 seconds have passed since last notification
+      const now = Date.now();
+      if (score < 70 && notificationsEnabled && now - lastNotificationTimeRef.current >= 1000 * 5) {
+        new Notification("Poor Posture Detected!", {
+          body: "Your posture score is low. Please adjust your sitting position 🪑",
+          silent: false,
+          icon: './officiallogo.png'
+        });
 
-      try {
-        await window.api.addPostureSession({
-          score: score
-        })
-        
-        // If score is below 70, send notification
-        if (score < 70 && notificationsEnabled && !cooldownRef.current) {
-          new Notification("Poor Posture Detected!", {
-            body: "Your posture score is low. Please adjust your sitting position 🪑",
-            silent: false,
-            icon: './officiallogo.png'
-          })
-          cooldownRef.current = true
-          setTimeout(() => {
-            cooldownRef.current = false
-          }, 1000 * 5);
-        }
-      } catch (error) {
-        console.error('Failed to add posture session:', error)
+        lastNotificationTimeRef.current = now;
       }
     }
   }, [detector, calculatePostureScore, drawPose]);
@@ -305,17 +298,47 @@ function Home() {
       }, 100);
     }
 
-    // Send exercise reminder every min
-    const exerciseInterval = setInterval(sendExerciseReminder, 1000 * 60)
     return () => {
       if (id) {
         clearInterval(id);
       }
+    }
+  }, [detector, detectPosture]);
+
+  useEffect(() => {
+
+    // Send exercise reminder every min
+    const exerciseInterval = setInterval(sendExerciseReminder, 1000 * 60)
+
+    return () => {
       if (exerciseInterval) {
         clearInterval(exerciseInterval);
       }
     }
-  }, [detector, detectPosture]);
+  }, []);
+
+  useEffect(() => {
+    postureScoreRef.current = postureScore;
+  }, [postureScore]);
+  
+  // Separate useEffect for running the interval
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        await window.api.addPostureSession({
+          score: postureScoreRef.current, // Always gets latest value
+        });
+      } catch (error) {
+        console.error("Failed to add posture session:", error);
+      }
+    }, 1000 * 5); // Runs every 5 seconds
+  
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    }
+  }, []);
 
   // Update localStorage when notifications state changes
   useEffect(() => {
