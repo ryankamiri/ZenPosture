@@ -50,21 +50,6 @@ app.post('/api/users/init', async (req, res) => {
         let user = await User.findOne({ HWID: hwid });
         
         if (user) {
-            console.log('Found existing user:', hwid);
-            // Verify postureSessions structure
-            if (!user.postureSessions || !user.postureSessions.monday) {
-                console.log('Fixing postureSessions structure for existing user');
-                user.postureSessions = {
-                    monday: [],
-                    tuesday: [],
-                    wednesday: [],
-                    thursday: [],
-                    friday: [],
-                    saturday: [],
-                    sunday: []
-                };
-                await user.save();
-            }
             return res.json(user);
         }
 
