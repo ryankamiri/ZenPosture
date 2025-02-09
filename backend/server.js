@@ -11,11 +11,11 @@ const app = express();
 const port = process.env.PORT || 5001;
 
 // Middleware - make sure these come before routes
-app.use(cors({
-    origin: ['http://localhost:5173', 'app://.*'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type']
-}));
+// app.use(cors({
+//     origin: ['http://localhost:5173', 'app://.*'],
+//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//     allowedHeaders: ['Content-Type']
+// }));
 
 // Body parser middleware
 app.use(express.json());
