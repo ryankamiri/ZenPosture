@@ -1,6 +1,7 @@
 import './App.css';
 
 import React, { useRef, useEffect, useState } from "react";
+import * as tf from "@tensorflow/tfjs";
 import * as poseDetection from "@tensorflow-models/pose-detection";
 import Webcam from "react-webcam";
 
@@ -9,6 +10,8 @@ function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   
+  const [tfModel, setTfModel] = useState(null);
+
   const [detector, setDetector] = useState(null);
   const [intervalId, setIntervalId] = useState(null);
   const [postureScore, setPostureScore] = useState(100);
@@ -26,11 +29,44 @@ function App() {
     };
 
   useEffect(() => {
-    const runBlazePose = async() => {
+    const initialize = async() => {
+      await tf.setBackend("webgl");
+      await tf.ready();
+
       const newDetector = await poseDetection.createDetector(model, detectorConfig);
       setDetector(newDetector);
+
+      const modelJsonResp = await fetch("/model.json");
+      const modelJson = await modelJsonResp.json();
+
+      const newModel = tf.sequential(); // Create a new empty model
+      
+      const firstLayerConfig = modelJson.config.layers[0].config;
+      firstLayerConfig.inputShape = firstLayerConfig.batch_input_shape.slice(1); // Extract input shape
+
+      // Add the first layer separately with inputShape
+      newModel.add(tf.layers.dense(firstLayerConfig));
+
+      // Add the rest of the layers
+      modelJson.config.layers.slice(1).forEach(layer => {
+        newModel.add(tf.layers.dense(layer.config));
+      });
+
+      // Load weights
+      const weightsData = await fetch("/model_weights.json").then(res => res.json());
+      const modelWeights = newModel.getWeights(); // Get empty placeholders
+
+      // Map loaded weights to tensors
+      const newWeights = modelWeights.map((w, i) => {
+        const data = Object.values(weightsData[i]); // Extract values as an array
+        return tf.tensor(data, w.shape);
+      });
+      newModel.setWeights(newWeights);
+
+      setTfModel(newModel);
+      console.log("Model successfully loaded with weights!");
     };
-    runBlazePose();
+    initialize();
 
     return () => {
       if (intervalId) {
@@ -39,17 +75,18 @@ function App() {
       if (detector) {
         detector.dispose();
       }
+      tf.dispose();
     };
   }, []);
 
   useEffect(() => {
     if (detector) {
-      // const id = setInterval(() => {
-      //   detectPosture();
-      // }, 100);
-      // setIntervalId(id);
+      const id = setInterval(() => {
+        detectPosture();
+      }, 500);
+      setIntervalId(id);
     }
-  }, [detector]);
+  }, [detector, tfModel]);
 
   const detectPosture = async() => {
     if (
@@ -61,34 +98,127 @@ function App() {
     }
 
     const video = webcamRef.current.video;
-    const videoWidth = webcamRef.current.videoWidth;
-    const videoHeight = webcamRef.current.videoHeight;
+    const videoWidth = webcamRef.current.video.videoWidth;
+    const videoHeight = webcamRef.current.video.videoHeight;
     video.width = videoWidth;
     video.height = videoHeight;
 
     const poses = await detector.estimatePoses(video);
     if (poses.length > 0) {
-      // const keypoints = poses[0].keypoints;
-      const keypoints = poses[0].keypoints.filter(kp => kp.score > 0.5);
-      const record = {
-        label: currentLabel,
-        timestamp: Date.now(),
-        videoWidth: video.videoWidth,
-        videoHeight: video.videoHeight,
-        keypoints: keypoints.map(kp => ({
-          name: kp.name,
-          x: kp.x,
-          y: kp.y,
-          score: kp.score
-        }))
-      };
-      setCollectedData(prev => [...prev, record]);
+      // const keypoints = poses[0].keypoints.filter(kp => kp.score > 0.5);
+      // const record = {
+      //   label: currentLabel,
+      //   timestamp: Date.now(),
+      //   videoWidth: video.videoWidth,
+      //   videoHeight: video.videoHeight,
+      //   keypoints: keypoints.map(kp => ({
+      //     name: kp.name,
+      //     x: kp.x,
+      //     y: kp.y,
+      //     score: kp.score
+      //   }))
+      // };
+      // setCollectedData(prev => [...prev, record]);
 
-      // drawPose(keypoints, video);
-      // const score = calculatePostureScore(keypoints);
-      // setPostureScore(score);
+      const keypoints = poses[0].keypoints;
+      drawPose(keypoints, video);
+      const score = calculatePostureScore(keypoints, videoWidth, videoHeight);
+      setPostureScore(score);
     }
   };
+
+  function distance2D(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  }
+  
+  function angleABC(Ax, Ay, Bx, By, Cx, Cy) {
+    // Angle at B formed by A->B->C, range [0..180].
+    const ABx = Ax - Bx;
+    const ABy = Ay - By;
+    const CBx = Cx - Bx;
+    const CBy = Cy - By;
+  
+    const dot = ABx * CBx + ABy * CBy;
+    const magAB = Math.sqrt(ABx ** 2 + ABy ** 2);
+    const magCB = Math.sqrt(CBx ** 2 + CBy ** 2);
+    if (magAB === 0 || magCB === 0) {
+      return 180.0; 
+    }
+    let cosTheta = dot / (magAB * magCB);
+    cosTheta = Math.max(-1, Math.min(1, cosTheta));
+    return (Math.acos(cosTheta) * 180) / Math.PI;
+  }
+
+  function calculatePostureScore(keypoints, videoWidth, videoHeight) {
+    if (!tfModel) {
+      return 100;
+    }
+
+    const kpMap = {};
+    keypoints.forEach(kp => {
+      kpMap[kp.name] = kp;
+    });
+
+    const required = ["nose", "left_shoulder", "right_shoulder", "left_ear", "right_ear"];
+    for (const name of required) {
+      if (!kpMap[name] || kpMap[name].score < 0.5) {
+        return 100;
+      }
+    }
+
+    function norm(name) {
+      return {
+        x: kpMap[name].x / videoWidth,
+        y: kpMap[name].y / videoHeight
+      };
+    }
+    const nose = norm("nose");
+    const lsho = norm("left_shoulder");
+    const rsho = norm("right_shoulder");
+    const lear = norm("left_ear");
+    const rear = norm("right_ear");
+  
+    const msho = {
+      x: (lsho.x + rsho.x) / 2,
+      y: (lsho.y + rsho.y) / 2
+    };
+  
+    const distNoseShoulders = distance2D(nose.x, nose.y, msho.x, msho.y);
+    const distShoulders     = distance2D(lsho.x, lsho.y, rsho.x, rsho.y);
+    const ratioNoseShoulders = distShoulders > 0 
+      ? distNoseShoulders / distShoulders 
+      : 0;
+  
+    const neckTiltAngle = angleABC(lear.x, lear.y, nose.x, nose.y, rear.x, rear.y);
+    const distLeftEarNose  = distance2D(lear.x, lear.y, nose.x, nose.y);
+    const distRightEarNose = distance2D(rear.x, rear.y, nose.x, nose.y);
+    const angleLeftShoulder  = angleABC(lear.x, lear.y, lsho.x, lsho.y, nose.x, nose.y);
+    const angleRightShoulder = angleABC(rear.x, rear.y, rsho.x, rsho.y, nose.x, nose.y);
+  
+    const featVec = [
+      distNoseShoulders,
+      ratioNoseShoulders,
+      neckTiltAngle,
+      distLeftEarNose,
+      distRightEarNose,
+      angleLeftShoulder,
+      angleRightShoulder
+    ];
+  
+    const xs = tf.tensor2d([featVec], [1, 7]);
+    const output = tfModel.predict(xs);
+    const rawVal = output.dataSync()[0]
+    const intVal = Math.round(rawVal, 0)
+    xs.dispose();
+    output.dispose();
+    if (Math.abs(intVal - postureScore) > 15) {
+      return intVal;
+    }
+    return postureScore;
+  
+    // const clamped = Math.max(0, Math.min(100, Math.round(rawVal, 0)));
+    // return clamped;
+  }  
 
   const handleExportCSV = () => {
     if (collectedData.length === 0) return;
@@ -271,7 +401,7 @@ function App() {
             }}
           />
         </div>
-        <div>
+        {/* <div>
           <input
             type="text"
             value={currentLabel}
@@ -282,7 +412,7 @@ function App() {
             <button onClick={handleExportCSV}>Export CSV</button>
           </div>
 
-          <p>Collected: {collectedData.length} samples</p>
+          <p>Collected: {collectedData.length} samples</p> */}
       </header>
     </div>
   );
