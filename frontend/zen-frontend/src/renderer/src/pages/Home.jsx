@@ -19,6 +19,7 @@ function Home() {
 
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
+  const cooldownRef = useRef(false);
   
   const [tfModel, setTfModel] = useState(null);
 
@@ -197,12 +198,16 @@ function Home() {
         })
         
         // If score is below 70, send notification
-        if (score < 70 && notificationsEnabled) {
+        if (score < 70 && notificationsEnabled && !cooldownRef.current) {
           new Notification("Poor Posture Detected!", {
             body: "Your posture score is low. Please adjust your sitting position 🪑",
             silent: false,
             icon: './officiallogo.png'
           })
+          cooldownRef.current = true
+          setTimeout(() => {
+            cooldownRef.current = false
+          }, 1000 * 5);
         }
       } catch (error) {
         console.error('Failed to add posture session:', error)

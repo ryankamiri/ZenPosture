@@ -353,7 +353,7 @@ body::before {
 
 .welcome-section {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 }
 
 .welcome-icon {
@@ -739,15 +739,30 @@ code {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  width: 640px;
+  height: 480px;
+  margin: 0 auto;
 }
 
 .webcam-container.minimized {
   width: 200px;
+  height: 150px;
   position: fixed;
   bottom: 20px;
   right: 20px;
   z-index: 100;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.webcam-container.minimized .webcam-content {
+  width: 200px;
+  height: 150px;
+}
+
+.webcam-container.minimized .webcam-view,
+.webcam-container.minimized canvas.webcam-view {
+  width: 200px !important;
+  height: 150px !important;
 }
 
 .webcam-header {
@@ -787,21 +802,25 @@ code {
   position: relative;
   aspect-ratio: 4/3;
   background: #000;
-  width: 640;
-  height: 480;
+  width: 640px;
+  height: 480px;
 }
 
 .webcam-view {
-  object-fit: cover;
-  position: "absolute";
-  margin-left: "auto";
-  margin-right: "auto";
+  position: absolute;
+  top: 0;
   left: 0;
-  right: 0;
-  text-align: "center";
-  z-index: 9;
-  width: 640;
-  height: 480;
+  width: 640px !important;
+  height: 480px !important;
+  object-fit: cover;
+}
+
+canvas.webcam-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 640px !important;
+  height: 480px !important;
 }
 
 .webcam-overlay {
@@ -811,31 +830,7 @@ code {
   right: 0;
   bottom: 0;
   pointer-events: none;
-}
-
-.posture-guide-lines {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.guide-line {
-  position: absolute;
-  background: rgba(108, 92, 231, 0.3);
-}
-
-.guide-line.vertical {
-  width: 2px;
-  height: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.guide-line.horizontal {
-  width: 100%;
-  height: 2px;
-  top: 50%;
-  transform: translateY(-50%);
+  z-index: 2;
 }
 
 /* Update responsive styles */
@@ -851,10 +846,6 @@ code {
 }
 
 @media (max-width: 768px) {
-  .webcam-container:not(.minimized) {
-    margin: -1rem -1rem 1rem -1rem;
-    border-radius: 0;
-  }
   
   .content-grid {
     gap: 1rem;
@@ -1670,23 +1661,24 @@ code {
 .posture-score-display {
   background: var(--card-bg);
   border-radius: 16px;
-  padding: 2rem;
-  margin-bottom: 2rem;
+  padding: 0.5rem;
+  margin-bottom: 1.5rem;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .posture-score-display h2 {
-  font-size: 1.8rem;
+  font-size: 1.2rem;
   color: var(--primary-text);
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
   font-weight: 600;
 }
 
 .score-value {
-  font-size: 4rem;
+  font-size: 2.5rem;
   font-weight: bold;
   transition: color 0.3s ease;
+  margin: 0.5rem 0;
 }
 
 .score-value.good {
