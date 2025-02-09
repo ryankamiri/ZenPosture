@@ -1748,3 +1748,59 @@ canvas.webcam-view {
   font-size: 0.9rem;
   color: var(--secondary-text);
 }
+
+/* Threshold Slider Styles */
+.threshold-section {
+  background: var(--card-bg);
+  border-radius: var(--card-border-radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.threshold-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.threshold-value {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--accent-color);
+}
+
+.threshold-slider {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+.threshold-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.threshold-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.threshold-description {
+  font-size: 0.9rem;
+  color: var(--secondary-text);
+  margin-top: 1rem;
+}

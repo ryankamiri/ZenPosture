@@ -38,6 +38,12 @@ function Home() {
   const [showStats, setShowStats] = useState(false)
   const navigate = useNavigate()
 
+  // Initialize threshold state from localStorage or default to 70
+  const [postureThreshold, setPostureThreshold] = useState(() => {
+    const saved = localStorage.getItem('postureThreshold')
+    return saved !== null ? parseInt(saved) : 70
+  })
+
   const drawKeypoints = useCallback(async(keypoints, ctx) => {
       const keypointIndices = poseDetection.util.getKeypointIndexBySide(model);
       const radius = 5;
@@ -194,9 +200,9 @@ function Home() {
       const score = await calculatePostureScore(keypoints, videoWidth, videoHeight);
       setPostureScore(score);
       
-      // Check if 5 seconds have passed since last notification
+      // Check if 5 seconds have passed since last notification and score is below threshold
       const now = Date.now();
-      if (score < 70 && notificationsEnabled && now - lastNotificationTimeRef.current >= 1000 * 5) {
+      if (score < postureThreshold && notificationsEnabled && now - lastNotificationTimeRef.current >= 1000 * 5) {
         new Notification("Poor Posture Detected!", {
           body: "Your posture score is low. Please adjust your sitting position 🪑",
           silent: false,
@@ -306,7 +312,6 @@ function Home() {
   }, [detector, detectPosture]);
 
   useEffect(() => {
-
     // Send exercise reminder every min
     const exerciseInterval = setInterval(sendExerciseReminder, 1000 * 60)
 
@@ -344,6 +349,11 @@ function Home() {
   useEffect(() => {
     localStorage.setItem('notificationsEnabled', JSON.stringify(notificationsEnabled))
   }, [notificationsEnabled])
+
+  // Add useEffect for threshold persistence
+  useEffect(() => {
+    localStorage.setItem('postureThreshold', postureThreshold.toString())
+  }, [postureThreshold])
 
   // Function to generate random score between 40 and 100
   const generateRandomScore = () => {
@@ -426,7 +436,7 @@ function Home() {
         <div className="main-content-area">
           <div className="posture-score-display">
             <h2>Current Posture Score</h2>
-            <div className={`score-value ${postureScore < 70 ? 'poor' : 'good'}`}>
+            <div className={`score-value ${postureScore < postureThreshold ? 'poor' : 'good'}`}>
               {postureScore}%
             </div>
           </div>
@@ -454,6 +464,24 @@ function Home() {
         </div>
 
         <div className="side-content-area">
+          <div className="threshold-section">
+            <div className="threshold-header">
+              <h3>Posture Alert Threshold</h3>
+              <span className="threshold-value">{postureThreshold}%</span>
+            </div>
+            <input
+              type="range"
+              min="50"
+              max="95"
+              value={postureThreshold}
+              className="threshold-slider"
+              onChange={(e) => setPostureThreshold(parseInt(e.target.value))}
+            />
+            <p className="threshold-description">
+              You will receive alerts when your posture score falls below this threshold
+            </p>
+          </div>
+
           <div className="notification-section">
             <div className="notification-toggle" onClick={toggleNotifications}>
               <div className={`toggle-track ${notificationsEnabled ? 'enabled' : ''}`}>
