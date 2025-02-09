@@ -1,4 +1,5 @@
-# 🧘 **Zen Posture**  
+# 🧘 **Zen Posture** 
+Tracks submitted: Lifestyle & Health, Best Use of MongoDB Atlas, Best Use of AI powered by Reach Capital
 
 ## 📌 **Inspiration**  
 In today's age, many people spend countless hours in front of computers, especially in computer science, leading to poor posture and potential health issues. We recognized the need for a solution that actively helps users maintain good posture while working, studying, or browsing online. This inspired us to create **Zen Posture**, a desktop application that serves as your personal posture companion.  
