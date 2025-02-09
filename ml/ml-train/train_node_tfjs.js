@@ -131,7 +131,7 @@ async function train() {
   const model = tf.sequential();
   model.add(tf.layers.dense({ units: 16, activation: "relu", inputShape: [7] }));
   model.add(tf.layers.dense({ units: 16, activation: "relu" }));
-  model.add(tf.layers.dense({ units: 1, activation: "softmax" }));
+  model.add(tf.layers.dense({ units: 1, activation: "linear" }));
 
   model.compile({
     optimizer: tf.train.adam(0.001),
