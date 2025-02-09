@@ -6,10 +6,19 @@ import WebcamView from '../components/WebcamView'
 import { useNavigate } from 'react-router-dom'
 
 function Home() {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  // Initialize state from localStorage or default to true
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    const saved = localStorage.getItem('notificationsEnabled')
+    return saved !== null ? JSON.parse(saved) : true
+  })
   const [showStats, setShowStats] = useState(false)
   const [currentScore, setCurrentScore] = useState(100)
   const navigate = useNavigate()
+
+  // Update localStorage when notifications state changes
+  useEffect(() => {
+    localStorage.setItem('notificationsEnabled', JSON.stringify(notificationsEnabled))
+  }, [notificationsEnabled])
 
   // Function to generate random score between 40 and 100
   const generateRandomScore = () => {
@@ -143,11 +152,9 @@ function Home() {
         <div className="side-content-area">
           <div className="notification-section">
             <div className="notification-toggle" onClick={toggleNotifications}>
-              {notificationsEnabled ? (
-                <IoNotifications className="notification-icon enabled" />
-              ) : (
-                <IoNotificationsOff className="notification-icon disabled" />
-              )}
+              <div className={`toggle-track ${notificationsEnabled ? 'enabled' : ''}`}>
+                <div className="toggle-thumb" />
+              </div>
             </div>
             <p className="notification-status">
               Reminders are currently {notificationsEnabled ? 'enabled' : 'disabled'}

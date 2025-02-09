@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+    
 }, { strict: true });
 
 // Helper method to get today's posture sessions
