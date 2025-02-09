@@ -114,7 +114,7 @@ async function train() {
     const item = extractFeatures(row);
     if (item) {
       XData.push(item.features);
-      YData.push(item.label);
+      YData.push(item.label / 100);
     }
   });
 
@@ -131,7 +131,7 @@ async function train() {
   const model = tf.sequential();
   model.add(tf.layers.dense({ units: 16, activation: "relu", inputShape: [7] }));
   model.add(tf.layers.dense({ units: 16, activation: "relu" }));
-  model.add(tf.layers.dense({ units: 1, activation: "linear" }));
+  model.add(tf.layers.dense({ units: 1, activation: "sigmoid" }));
 
   model.compile({
     optimizer: tf.train.adam(0.001),
@@ -151,7 +151,7 @@ async function train() {
   });
 
   const modelJson = await model.toJSON();
-  fs.writeFileSync("model.json", JSON.stringify(modelJson));
+  fs.writeFileSync("model.json", modelJson);
   console.log("Model JSON saved to model.json");
 
   const weights = await model.getWeights();
