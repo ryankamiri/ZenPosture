@@ -195,7 +195,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 2rem;
+  padding: 0.75rem 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   position: fixed;
   top: 0;
@@ -208,6 +208,7 @@ body {
 .nav-brand {
   display: flex;
   align-items: center;
+  padding: 0.5rem 0;
 }
 
 .nav-brand h1 {
@@ -220,6 +221,7 @@ body {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
+  padding: 0.25rem 0;
 }
 
 .nav-links {
@@ -340,6 +342,7 @@ body::before {
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
+  margin-top: calc(var(--nav-height));
 }
 
 .welcome-section {
@@ -847,6 +850,7 @@ code {
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
+  margin-top: calc(var(--nav-height));
 }
 
 .about-header {
@@ -986,235 +990,129 @@ code {
 
 /* Statistics page styles */
 .statistics-container {
-  width: 80vw;
-  margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 3rem;
+  min-height: 100vh;
+  min-width: 80vw;
+  background: var(--primary-bg);
 }
 
-.statistics-header {
+.stats-header {
+  margin-bottom: 2.5rem;
   text-align: center;
-  margin-bottom: 3rem;
 }
 
-.statistics-header h1 {
-  font-size: 3.2rem;
-  margin-bottom: 0.75rem;
-  background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+.stats-header h1 {
+  font-size: 2.8rem;
+  color: var(--primary-text);
+  margin-bottom: 0.5rem;
 }
 
-.statistics-header p {
-  color: var(--text-muted);
-  font-size: 1.15rem;
-  line-height: 1.6;
-  max-width: 600px;
-  margin: 0 auto;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+.stats-header p {
+  color: var(--secondary-text);
+  font-size: 1.1rem;
 }
 
-.statistics-grid {
+.stats-grid {
   display: grid;
-  grid-template-columns: 1fr 350px;
+  grid-template-columns: 1fr;
   gap: 2rem;
-  margin-top: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.chart-section {
-  min-width: 0; /* Prevents chart from overflowing */
+.stats-chart-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-.stats-section .stats-overview {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.stats-section .stat-card {
-  width: 100%;
-}
-
-.stat-card {
-  background: var(--card-background);
-  border-radius: var(--card-border-radius);
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.stat-card-icon {
-  font-size: 1.5rem;
-  color: var(--primary-color);
-  background: rgba(108, 92, 231, 0.1);
-  padding: 0.75rem;
-  border-radius: 12px;
-}
-
-.stat-card-content {
-  flex: 1;
-}
-
-.stat-card h3 {
-  font-size: 1rem;
-  color: var(--text-muted);
-  margin: 0 0 0.5rem 0;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-}
-
-.stat-card-value {
-  font-size: 2.4rem;
-  font-weight: 800;
-  color: var(--text-color);
-  margin-bottom: 0.25rem;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-.stat-card-trend {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #00b894;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  letter-spacing: -0.01em;
-}
-
-.stat-card-subtitle {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  letter-spacing: -0.01em;
+.stats-chart-card h2 {
+  font-size: 1.6rem;
+  color: var(--primary-text);
+  margin-bottom: 2rem;
 }
 
 .chart-container {
-  background: var(--card-background);
-  border-radius: var(--card-border-radius);
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  height: 100%;
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.chart-header h2 {
-  font-size: 1.6rem;
-  margin: 0;
-  color: var(--text-color);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.chart-legend {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
-
-.chart-legend-icon {
-  color: var(--primary-color);
-  font-size: 1.2rem;
-}
-
-.chart-wrapper {
-  flex: 1;
-  position: relative;
-  min-height: 300px;
-  height: 100%;
+  height: 400px;
   width: 100%;
 }
 
-@media (max-width: 1200px) {
-  .statistics-grid {
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.summary-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+}
+
+.summary-icon {
+  font-size: 2.5rem;
+  color: var(--accent-color);
+  background: rgba(108, 92, 231, 0.1);
+  padding: 1rem;
+  border-radius: 16px;
+}
+
+.summary-content h3 {
+  font-size: 0.9rem;
+  color: var(--secondary-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.summary-value {
+  font-size: 2.4rem;
+  font-weight: bold;
+  color: var(--primary-text);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.summary-label {
+  font-size: 0.9rem;
+  color: var(--secondary-text);
+}
+
+@media (max-width: 1024px) {
+  .statistics-container {
+    padding: 2rem;
+  }
+
+  .stats-header h1 {
+    font-size: 2.4rem;
+  }
+
+  .stats-summary {
     grid-template-columns: 1fr;
-  }
-
-  .chart-container {
-    min-height: 350px;
-  }
-
-  .chart-wrapper {
-    min-height: 250px;
-  }
-
-  .stats-section .stats-overview {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-  }
-
-  .statistics-header h1 {
-    font-size: 2.8rem;
-  }
-
-  .chart-header h2 {
-    font-size: 1.4rem;
-  }
-
-  .stat-card-value {
-    font-size: 2.2rem;
   }
 }
 
 @media (max-width: 768px) {
-  .statistics-grid {
-    gap: 1.5rem;
+  .statistics-container {
+    padding: 1.5rem;
   }
 
-  .stats-section .stats-overview {
-    grid-template-columns: 1fr;
-  }
-
-  .statistics-header h1 {
-    font-size: 2.4rem;
-  }
-
-  .statistics-header p {
-    font-size: 1.1rem;
+  .stats-header h1 {
+    font-size: 2rem;
   }
 
   .chart-container {
-    min-height: 300px;
-    padding: 1rem;
-  }
-
-  .chart-wrapper {
-    min-height: 200px;
-  }
-
-  .chart-header {
-    margin-bottom: 1rem;
-  }
-
-  .chart-header h2 {
-    font-size: 1.3rem;
-  }
-
-  .stat-card-value {
-    font-size: 2rem;
+    height: 300px;
   }
 }
 
@@ -1678,4 +1576,92 @@ code {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.3);
+}
+
+/* Test Controls Section */
+.test-controls {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.test-controls h3 {
+  font-size: 1rem;
+  color: var(--secondary-text);
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.test-controls-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.test-button {
+  padding: 1rem;
+  background: rgba(108, 92, 231, 0.1);
+  border: 1px solid rgba(108, 92, 231, 0.2);
+  border-radius: 8px;
+  color: var(--primary-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.test-button:hover {
+  background: rgba(108, 92, 231, 0.2);
+  border-color: rgba(108, 92, 231, 0.3);
+  transform: translateY(-1px);
+}
+
+.test-button .button-icon {
+  font-size: 1.2rem;
+  color: var(--accent-color);
+}
+
+.test-button.secondary {
+  background: rgba(165, 94, 234, 0.1);
+  border-color: rgba(165, 94, 234, 0.2);
+}
+
+.test-button.secondary:hover {
+  background: rgba(165, 94, 234, 0.2);
+  border-color: rgba(165, 94, 234, 0.3);
+}
+
+.posture-score-display {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.posture-score-display h2 {
+  font-size: 1.8rem;
+  color: var(--primary-text);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.score-value {
+  font-size: 4rem;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.score-value.good {
+  color: var(--success-color);
+}
+
+.score-value.poor {
+  color: #ff7675;
 }

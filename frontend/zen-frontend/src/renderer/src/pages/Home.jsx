@@ -1,35 +1,82 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { IoNotifications, IoNotificationsOff } from 'react-icons/io5'
 import { BiBody } from 'react-icons/bi'
-import { FiActivity, FiClock, FiCheckCircle } from 'react-icons/fi'
+import { FiActivity, FiClock, FiCheckCircle, FiPlus, FiPlusCircle } from 'react-icons/fi'
 import WebcamView from '../components/WebcamView'
 import { useNavigate } from 'react-router-dom'
+
 function Home() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [showStats, setShowStats] = useState(false)
+  const [currentScore, setCurrentScore] = useState(100)
   const navigate = useNavigate()
 
-  const sendTestNotification = () => {
+  // Function to generate random score between 40 and 100
+  const generateRandomScore = () => {
+    return Math.floor(Math.random() * (100 - 40 + 1)) + 40;
+  }
+
+  // Function to send exercise reminder notification
+  const sendExerciseReminder = () => {
     if (!("Notification" in window)) {
       alert("This browser does not support desktop notifications")
       return
     }
 
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        const notification = new Notification("Time for Posture Exercises!", {
-          body: "Let's do some stretches to maintain good posture 🧘‍♂️",
-          silent: false,
-          icon: './officiallogo.png',
-        })
+    if (notificationsEnabled) {
+      const notification = new Notification("Time for Posture Exercises!", {
+        body: "Let's do some stretches to maintain good posture 🧘‍♂️",
+        silent: false,
+        icon: './officiallogo.png'
+      })
 
-        notification.onclick = () => {
-          navigate('/exercises')
-          window.focus()
-        }
+      notification.onclick = () => {
+        navigate('/exercises')
+        window.focus()
       }
-    })
+    }
   }
+
+  // Function to check posture and send notification if needed
+  const checkPosture = async () => {
+    const newScore = generateRandomScore()
+    setCurrentScore(newScore)
+    
+    try {
+      await window.api.addPostureSession({
+        score: newScore
+      })
+      
+      // If score is below 60, send notification
+      if (newScore < 60 && notificationsEnabled) {
+        new Notification("Poor Posture Detected!", {
+          body: "Your posture score is low. Please adjust your sitting position 🪑",
+          silent: false,
+          icon: './officiallogo.png'
+        })
+      }
+    } catch (error) {
+      console.error('Failed to add posture session:', error)
+    }
+  }
+
+  // Set up intervals for both posture checks and exercise reminders
+  useEffect(() => {
+    // Initial checks
+    checkPosture()
+    sendExerciseReminder()
+
+    // Check posture every 5 seconds
+    const postureInterval = setInterval(checkPosture, 5000)
+    
+    // Send exercise reminder every 20 minutes
+    const exerciseInterval = setInterval(sendExerciseReminder, 100000)
+
+    return () => {
+      clearInterval(postureInterval)
+      clearInterval(exerciseInterval)
+    }
+  }, [notificationsEnabled]) // Re-run if notifications are toggled
 
   const toggleNotifications = () => {
     setNotificationsEnabled(!notificationsEnabled)
@@ -84,42 +131,30 @@ function Home() {
 
       <div className="content-grid">
         <div className="main-content-area">
+          <div className="posture-score-display">
+            <h2>Current Posture Score</h2>
+            <div className={`score-value ${currentScore < 60 ? 'poor' : 'good'}`}>
+              {currentScore}%
+            </div>
+          </div>
           <WebcamView />
         </div>
 
         <div className="side-content-area">
-          <div className="notification-card">
-            <div className="notification-header">
-              <div className="header-content">
-                {notificationsEnabled ? 
-                  <IoNotifications className="notification-icon" /> : 
-                  <IoNotificationsOff className="notification-icon" />
-                }
-                <h2>Posture Reminders</h2>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={notificationsEnabled}
-                  onChange={toggleNotifications}
-                />
-                <span className="toggle-slider"></span>
-              </label>
+          <div className="notification-section">
+            <div className="notification-toggle" onClick={toggleNotifications}>
+              {notificationsEnabled ? (
+                <IoNotifications className="notification-icon enabled" />
+              ) : (
+                <IoNotificationsOff className="notification-icon disabled" />
+              )}
             </div>
             <p className="notification-status">
               Reminders are currently {notificationsEnabled ? 'enabled' : 'disabled'}
             </p>
             <p className="notification-description">
-              You will receive gentle reminders every 60 minutes to check your posture
+              You will receive alerts when your posture needs attention
             </p>
-            
-            <button 
-              className="test-notification-btn"
-              onClick={sendTestNotification}
-              disabled={!notificationsEnabled}
-            >
-              Test Notification
-            </button>
           </div>
 
           <div className="stats-section">
@@ -155,38 +190,6 @@ function Home() {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Test buttons */}
-          <div className="test-controls" style={{ marginTop: '20px' }}>
-            <button 
-              onClick={addRandomSession}
-              style={{
-                padding: '10px 20px',
-                marginRight: '10px',
-                backgroundColor: '#6c5ce7',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
-              }}
-            >
-              Add Random Session
-            </button>
-            
-            <button 
-              onClick={() => addMultipleRandomSessions(5)}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#a55eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
-              }}
-            >
-              Add 5 Random Sessions
-            </button>
           </div>
         </div>
       </div>

@@ -55,13 +55,17 @@ function Statistics() {
       label: 'Posture Score',
       data: sessions.map(session => session.score),
       borderColor: '#6c5ce7',
-      backgroundColor: 'rgba(108, 92, 231, 0.1)',
+      backgroundColor: 'rgba(108, 92, 231, 0.15)',
       fill: true,
-      tension: 0.4,
-      pointRadius: 4,
+      tension: 0.3,
+      pointRadius: 6,
       pointBackgroundColor: '#fff',
       pointBorderColor: '#6c5ce7',
-      pointBorderWidth: 2
+      pointBorderWidth: 2,
+      pointHoverRadius: 8,
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: '#6c5ce7',
+      pointHoverBorderWidth: 3
     }]
   }
 
@@ -69,13 +73,27 @@ function Statistics() {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { display: false },
+      legend: {
+        display: false
+      },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
         padding: 12,
         titleColor: '#fff',
         bodyColor: '#fff',
-        displayColors: false
+        displayColors: false,
+        titleFont: {
+          size: 13,
+          weight: '500'
+        },
+        bodyFont: {
+          size: 14,
+          weight: '600'
+        },
+        callbacks: {
+          title: (items) => `Time: ${items[0].label}`,
+          label: (item) => `Score: ${item.raw}%`
+        }
       }
     },
     scales: {
@@ -83,19 +101,67 @@ function Statistics() {
         min: 0,
         max: 100,
         grid: {
-          color: 'rgba(255, 255, 255, 0.05)'
+          color: 'rgba(255, 255, 255, 0.04)',
+          drawBorder: false
+        },
+        border: {
+          display: false
         },
         ticks: {
-          color: '#999'
+          color: 'rgba(255, 255, 255, 0.6)',
+          font: {
+            size: 12
+          },
+          padding: 10,
+          stepSize: 20
+        },
+        title: {
+          display: true,
+          text: 'Posture Score (%)',
+          color: 'rgba(255, 255, 255, 0.9)',
+          font: {
+            size: 14,
+            weight: '500'
+          },
+          padding: { bottom: 15 }
         }
       },
       x: {
         grid: {
           display: false
         },
+        border: {
+          display: false
+        },
         ticks: {
-          color: '#999'
+          color: 'rgba(255, 255, 255, 0.6)',
+          font: {
+            size: 12
+          },
+          maxRotation: 45,
+          minRotation: 45,
+          padding: 10,
+          autoSkip: true,
+          maxTicksLimit: 8
+        },
+        title: {
+          display: true,
+          text: 'Time',
+          color: 'rgba(255, 255, 255, 0.9)',
+          font: {
+            size: 14,
+            weight: '500'
+          },
+          padding: { top: 15 }
         }
+      }
+    },
+    layout: {
+      padding: {
+        top: 20,
+        right: 20,
+        bottom: 20,
+        left: 10
       }
     }
   }
@@ -113,35 +179,39 @@ function Statistics() {
 
   return (
     <div className="statistics-container">
-      <div className="stats-header">
-        <h1>Today's Statistics</h1>
+      <div className="about-header">
+        <h1>Posture Analytics</h1>
+        <p className="about-subtitle">Track your posture performance over time</p>
       </div>
 
-      <div className="stats-content-wrapper">
-        <div className="chart-section">
-          <h2>Posture Score Timeline</h2>
-          <div className="chart-container">
-            <Line data={chartData} options={chartOptions} />
+      <div className="features-grid">
+        {/* Chart Card */}
+        <div className="feature-card">
+          <div className="feature-icon">
+            <BiTrendingUp />
           </div>
+          <h3>Average Score</h3>
+          <div className="stat-value">{stats.avgScore}%</div>
+          <p>Today's average posture score</p>
         </div>
 
-        <div className="stats-cards-section">
-          <div className="stat-card">
-            <BiTrendingUp className="stat-card-icon" />
-            <div className="stat-card-content">
-              <h3>Average Score</h3>
-              <div className="stat-card-value">{stats.avgScore}%</div>
-              <div className="stat-card-subtitle">Today's average</div>
-            </div>
+        {/* Sessions Card */}
+        <div className="feature-card">
+          <div className="feature-icon">
+            <BiBody />
           </div>
+          <h3>Total Sessions</h3>
+          <div className="stat-value">{stats.totalSessions}</div>
+          <p>Number of sessions today</p>
+        </div>
+      </div>
 
-          <div className="stat-card">
-            <BiBody className="stat-card-icon" />
-            <div className="stat-card-content">
-              <h3>Sessions</h3>
-              <div className="stat-card-value">{stats.totalSessions}</div>
-              <div className="stat-card-subtitle">Total today</div>
-            </div>
+      {/* Chart Section Below */}
+      <div className="about-section">
+        <div className="feature-card">
+          <h2>Today's Timeline</h2>
+          <div className="chart-container">
+            <Line data={chartData} options={chartOptions} />
           </div>
         </div>
       </div>
