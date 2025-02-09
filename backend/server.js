@@ -58,13 +58,6 @@ app.post('/api/users/init', async (req, res) => {
             const newUser = {
                 HWID: hwid,
                 postureSessions: {
-                    monday: [],
-                    tuesday: [],
-                    wednesday: [],
-                    thursday: [],
-                    friday: [],
-                    saturday: [],
-                    sunday: []
                 },
                 createdAt: new Date()
             };

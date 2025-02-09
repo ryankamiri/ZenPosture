@@ -4,7 +4,6 @@ import { BiBody } from 'react-icons/bi'
 import { FiActivity, FiClock, FiCheckCircle } from 'react-icons/fi'
 import WebcamView from '../components/WebcamView'
 import { useNavigate } from 'react-router-dom'
-
 function Home() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [showStats, setShowStats] = useState(false)
@@ -21,7 +20,7 @@ function Home() {
         const notification = new Notification("Time for Posture Exercises!", {
           body: "Let's do some stretches to maintain good posture 🧘‍♂️",
           silent: false,
-          icon: path.join(__dirname, 'officiallogo.png'),
+          icon: './officiallogo.png',
         })
 
         notification.onclick = () => {
