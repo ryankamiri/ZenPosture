@@ -1,0 +1,13 @@
+{
+  "name": "ml-train",
+  "version": "1.0.0",
+  "main": "train_node_tfjs.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "keywords": [],
+  "description": ""
+}

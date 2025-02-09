@@ -13,6 +13,9 @@ function App() {
   const [intervalId, setIntervalId] = useState(null);
   const [postureScore, setPostureScore] = useState(100);
 
+  const [collectedData, setCollectedData] = useState([]);
+  const [currentLabel, setCurrentLabel] = useState(100);
+
   const model = poseDetection.SupportedModels.BlazePose;
     const detectorConfig = {
       runtime: "mediapipe",
@@ -41,10 +44,10 @@ function App() {
 
   useEffect(() => {
     if (detector) {
-      const id = setInterval(() => {
-        detectPosture();
-      }, 100);
-      setIntervalId(id);
+      // const id = setInterval(() => {
+      //   detectPosture();
+      // }, 100);
+      // setIntervalId(id);
     }
   }, [detector]);
 
@@ -65,40 +68,95 @@ function App() {
 
     const poses = await detector.estimatePoses(video);
     if (poses.length > 0) {
-      console.log(poses);
-      const keypoints = poses[0].keypoints;
-      drawPose(keypoints, video);
-      const score = calculatePostureScore(keypoints);
-      setPostureScore(score);
+      // const keypoints = poses[0].keypoints;
+      const keypoints = poses[0].keypoints.filter(kp => kp.score > 0.5);
+      const record = {
+        label: currentLabel,
+        timestamp: Date.now(),
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+        keypoints: keypoints.map(kp => ({
+          name: kp.name,
+          x: kp.x,
+          y: kp.y,
+          score: kp.score
+        }))
+      };
+      setCollectedData(prev => [...prev, record]);
+
+      // drawPose(keypoints, video);
+      // const score = calculatePostureScore(keypoints);
+      // setPostureScore(score);
     }
   };
 
-  const calculatePostureScore = (keypoints) => {
-    const leftShoulder = keypoints.find(p => p.name === "left_shoulder");
-    const rightShoulder = keypoints.find(p => p.name === "right_shoulder");
-    const nose = keypoints.find(p => p.name === "nose");
-    const leftEar = keypoints.find(p => p.name === "left_ear");
-    const rightEar = keypoints.find(p => p.name === "right_ear");
+  const handleExportCSV = () => {
+    if (collectedData.length === 0) return;
 
-    let score = 100;
+    // 3A) Convert each record to a row of CSV
+    // Example: We'll store the label, video dims, plus each keypoint x,y
+    // [name_x, name_y ... repeated for each known keypoint? Or do it dynamically?]
+    // This can be as simple or advanced as you want.
 
-    // Forward Head Posture
-    if (nose && leftShoulder && nose.x > leftShoulder.x + 50) {
-      score -= 25;
-    }
+    // 3B) First, define all possible keypoint names we care about:
+    const keypointNames = [
+      "nose", "left_eye_inner", "left_eye", "left_eye_outer",
+      "right_eye_inner", "right_eye", "right_eye_outer",
+      "left_ear", "right_ear", "mouth_left", "mouth_right",
+      "left_shoulder", "right_shoulder"
+    ];
 
-    // Shoulder Misalignment
-    if (leftShoulder && rightShoulder && Math.abs(leftShoulder.y - rightShoulder.y) > 20) {
-      score -= 15;
-    }
+    // 3C) Write a header row
+    // We'll do: label, videoWidth, videoHeight, then for each kpName => [x,y]
+    let header = ["label", "videoWidth", "videoHeight"];
+    keypointNames.forEach(kp => {
+      header.push(`${kp}_x`, `${kp}_y`);
+    });
 
-    // Head Tilt
-    if (leftEar && rightEar && Math.abs(leftEar.y - rightEar.y) > 20) {
-      score -= 20;
-    }
+    const rows = [];
+    rows.push(header.join(",")); // CSV header
 
-    return Math.max(score, 0);
+    // 3D) For each record, build a row of data
+    collectedData.forEach(record => {
+      const row = [];
+      // Start with label, video dims
+      row.push(record.label);
+      row.push(record.videoWidth);
+      row.push(record.videoHeight);
+
+      // Build a map of name->(x,y)
+      const kpMap = {};
+      record.keypoints.forEach(kp => {
+        kpMap[kp.name] = { x: kp.x, y: kp.y };
+      });
+
+      // For each keypoint name in the official list, push x,y or blank
+      keypointNames.forEach(kpName => {
+        if (kpMap[kpName]) {
+          row.push(kpMap[kpName].x.toFixed(2));
+          row.push(kpMap[kpName].y.toFixed(2));
+        } else {
+          row.push(""); // blank
+          row.push("");
+        }
+      });
+
+      rows.push(row.join(","));
+    });
+
+    // 3E) Create a blob and download
+    const csvString = rows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "posture_data.csv";
+    link.click();
+    window.URL.revokeObjectURL(url);
   };
+
+  
 
   const drawPose = (keypoints, video) => {
     const ctx = canvasRef.current.getContext("2d");
@@ -213,6 +271,18 @@ function App() {
             }}
           />
         </div>
+        <div>
+          <input
+            type="text"
+            value={currentLabel}
+            onChange={(e) => setCurrentLabel(e.target.value)}
+            style={{ width: 200, padding: 5 }}
+          />
+            <button onClick={detectPosture}>Capture Pose</button>
+            <button onClick={handleExportCSV}>Export CSV</button>
+          </div>
+
+          <p>Collected: {collectedData.length} samples</p>
       </header>
     </div>
   );
