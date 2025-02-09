@@ -20,7 +20,8 @@ function Home() {
       if (permission === "granted") {
         const notification = new Notification("Time for Posture Exercises!", {
           body: "Let's do some stretches to maintain good posture 🧘‍♂️",
-          silent: false
+          silent: false,
+          icon: path.join(__dirname, 'officiallogo.png'),
         })
 
         notification.onclick = () => {
@@ -37,6 +38,41 @@ function Home() {
 
   const toggleStats = () => {
     setShowStats(!showStats)
+  }
+
+  const addRandomSession = async () => {
+    try {
+      // Generate random score between 60 and 100
+      const randomScore = Math.floor(Math.random() * (100 - 60 + 1)) + 60
+      
+      console.log('Adding random session with score:', randomScore)
+      
+      await window.api.addPostureSession({
+        score: randomScore
+      })
+      
+      console.log('Successfully added session')
+    } catch (error) {
+      console.error('Failed to add random session:', error)
+    }
+  }
+
+  // Function to add multiple random sessions
+  const addMultipleRandomSessions = async (count = 5) => {
+    try {
+      console.log(`Adding ${count} random sessions...`)
+      
+      for (let i = 0; i < count; i++) {
+        // Add some random delay between sessions (0-2 seconds)
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000))
+        
+        await addRandomSession()
+      }
+      
+      console.log('Successfully added multiple sessions')
+    } catch (error) {
+      console.error('Failed to add multiple sessions:', error)
+    }
   }
 
   return (
@@ -120,6 +156,38 @@ function Home() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Test buttons */}
+          <div className="test-controls" style={{ marginTop: '20px' }}>
+            <button 
+              onClick={addRandomSession}
+              style={{
+                padding: '10px 20px',
+                marginRight: '10px',
+                backgroundColor: '#6c5ce7',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              Add Random Session
+            </button>
+            
+            <button 
+              onClick={() => addMultipleRandomSessions(5)}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#a55eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              Add 5 Random Sessions
+            </button>
           </div>
         </div>
       </div>

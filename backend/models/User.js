@@ -1,24 +1,21 @@
 const mongoose = require('mongoose');
 
 const postureSessionSchema = new mongoose.Schema({
-    postureScore: {
+    timestamp: {
+        type: Date,
+        default: Date.now,
+        required: true
+    },
+    score: {
         type: Number,
         min: 0,
         max: 100,
         default: 0
-    },
-    duration: {
-        type: Number,
-        default: 0
-    },
-    date: {
-        type: Date,
-        default: Date.now
     }
 });
 
 const userSchema = new mongoose.Schema({
-    UserID: {
+    HWID: {
         type: String,
         required: true,
         unique: true,
@@ -32,51 +29,40 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 60
     },
-    postureSessions: {
-        monday: [postureSessionSchema],
-        tuesday: [postureSessionSchema],
-        wednesday: [postureSessionSchema],
-        thursday: [postureSessionSchema],
-        friday: [postureSessionSchema],
-        saturday: [postureSessionSchema],
-        sunday: [postureSessionSchema]
+    postureSessions: [postureSessionSchema],
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
-});
+}, { strict: true });
 
 // Helper method to get today's posture sessions
 userSchema.methods.getTodaySessions = function() {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const today = days[new Date().getDay()];
-    return this.postureSessions[today];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return this.postureSessions.filter(session => {
+        const sessionDate = new Date(session.timestamp);
+        return sessionDate >= today;
+    });
 };
 
-// Helper method to add a posture session for today
+// Helper method to add a posture session
 userSchema.methods.addPostureSession = function(sessionData) {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const today = days[new Date().getDay()];
-    this.postureSessions[today].push({
-        postureScore: sessionData.postureScore,
-        duration: sessionData.duration,
-        date: new Date()
+    this.postureSessions.push({
+        timestamp: Date.now(),
+        score: sessionData.score
     });
     return this.save();
 };
 
 // Static method to find or create user by HWID
 userSchema.statics.findOrCreateByHWID = async function(hwid) {
-    let user = await this.findOne({ UserID: hwid });
+    let user = await this.findOne({ HWID: hwid });
     if (!user) {
         user = new this({
-            UserID: hwid,
-            postureSessions: {
-                monday: [],
-                tuesday: [],
-                wednesday: [],
-                thursday: [],
-                friday: [],
-                saturday: [],
-                sunday: []
-            }
+            HWID: hwid,
+            postureSessions: []
         });
         await user.save();
     }
