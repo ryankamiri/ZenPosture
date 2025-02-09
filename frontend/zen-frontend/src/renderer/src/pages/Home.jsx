@@ -1,19 +1,316 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { IoNotifications, IoNotificationsOff } from 'react-icons/io5'
 import { BiBody } from 'react-icons/bi'
 import { FiActivity, FiClock, FiCheckCircle, FiPlus, FiPlusCircle } from 'react-icons/fi'
-import WebcamView from '../components/WebcamView'
 import { useNavigate } from 'react-router-dom'
 
+import * as tf from "@tensorflow/tfjs";
+import * as poseDetection from "@tensorflow-models/pose-detection";
+import Webcam from 'react-webcam'
+import { BiCamera, BiReset } from 'react-icons/bi'
+
 function Home() {
+
+  const [isMinimized, setIsMinimized] = useState(false)
+
+  const toggleMinimize = () => {
+    setIsMinimized(!isMinimized)
+  }
+
+  const webcamRef = useRef(null);
+  const canvasRef = useRef(null);
+  
+  const [tfModel, setTfModel] = useState(null);
+
+  const [detector, setDetector] = useState(null);
+  const [postureScore, setPostureScore] = useState(100);
+
+  const model = poseDetection.SupportedModels.BlazePose;
+
   // Initialize state from localStorage or default to true
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     const saved = localStorage.getItem('notificationsEnabled')
     return saved !== null ? JSON.parse(saved) : true
   })
   const [showStats, setShowStats] = useState(false)
-  const [currentScore, setCurrentScore] = useState(100)
   const navigate = useNavigate()
+
+  const drawKeypoints = useCallback(async(keypoints, ctx) => {
+      const keypointIndices = poseDetection.util.getKeypointIndexBySide(model);
+      const radius = 5;
+      ctx.lineWidth = 2;
+  
+      // Middle (nose, etc.)
+      ctx.fillStyle = "Red";
+      ctx.strokeStyle = "White";
+      keypointIndices.middle.forEach((i) => {
+        const kp = keypoints[i];
+        if (kp.score > 0.5) drawCircle(ctx, kp.x, kp.y, radius);
+      });
+  
+      // Left side (eyes, shoulder, etc.)
+      ctx.fillStyle = "Green";
+      ctx.strokeStyle = "White";
+      keypointIndices.left.forEach((i) => {
+        const kp = keypoints[i];
+        if (kp.score > 0.5) drawCircle(ctx, kp.x, kp.y, radius);
+      });
+  
+      // Right side
+      ctx.fillStyle = "Orange";
+      ctx.strokeStyle = "White";
+      keypointIndices.right.forEach((i) => {
+        const kp = keypoints[i];
+        if (kp.score > 0.5) drawCircle(ctx, kp.x, kp.y, radius);
+      });
+    }, [model]);
+  
+    const drawSkeleton = useCallback(async(keypoints, ctx) => {
+      const adjacency = poseDetection.util.getAdjacentPairs(
+        model
+      );
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 2;
+  
+      adjacency.forEach(([i, j]) => {
+        const kp1 = keypoints[i];
+        const kp2 = keypoints[j];
+        if (kp1.score > 0.5 && kp2.score > 0.5) {
+          ctx.beginPath();
+          ctx.moveTo(kp1.x, kp1.y);
+          ctx.lineTo(kp2.x, kp2.y);
+          ctx.stroke();
+        }
+      });
+    }, [model]);
+  
+    const drawPose = useCallback(async(keypoints, video) => {
+      const ctx = canvasRef.current.getContext("2d");
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+  
+      canvasRef.current.width = videoWidth;
+      canvasRef.current.height = videoHeight;
+  
+      ctx.clearRect(0, 0, videoWidth, videoHeight);
+  
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.translate(-videoWidth, 0);
+  
+      await drawSkeleton(keypoints, ctx);
+      await drawKeypoints(keypoints, ctx);
+  
+      ctx.restore();
+    }, [drawKeypoints, drawSkeleton]);
+  
+    const calculatePostureScore = useCallback(async(keypoints, videoWidth, videoHeight) => {
+      if (!tfModel) {
+        return postureScore;
+      }
+  
+      const kpMap = {};
+      keypoints.forEach(kp => {
+        kpMap[kp.name] = kp;
+      });
+  
+      const required = ["nose", "left_shoulder", "right_shoulder", "left_ear", "right_ear"];
+      for (const name of required) {
+        if (!kpMap[name] || kpMap[name].score < 0.5) {
+          return postureScore;
+        }
+      }
+  
+      function norm(name) {
+        return {
+          x: kpMap[name].x / videoWidth,
+          y: kpMap[name].y / videoHeight
+        };
+      }
+      const nose = norm("nose");
+      const lsho = norm("left_shoulder");
+      const rsho = norm("right_shoulder");
+      const lear = norm("left_ear");
+      const rear = norm("right_ear");
+    
+      const msho = {
+        x: (lsho.x + rsho.x) / 2,
+        y: (lsho.y + rsho.y) / 2
+      };
+    
+      const distNoseShoulders = distance2D(nose.x, nose.y, msho.x, msho.y);
+      const distShoulders     = distance2D(lsho.x, lsho.y, rsho.x, rsho.y);
+      const ratioNoseShoulders = distShoulders > 0 
+        ? distNoseShoulders / distShoulders 
+        : 0;
+    
+      const neckTiltAngle = angleABC(lear.x, lear.y, nose.x, nose.y, rear.x, rear.y);
+      const distLeftEarNose  = distance2D(lear.x, lear.y, nose.x, nose.y);
+      const distRightEarNose = distance2D(rear.x, rear.y, nose.x, nose.y);
+      const angleLeftShoulder  = angleABC(lear.x, lear.y, lsho.x, lsho.y, nose.x, nose.y);
+      const angleRightShoulder = angleABC(rear.x, rear.y, rsho.x, rsho.y, nose.x, nose.y);
+    
+      const featVec = [
+        distNoseShoulders,
+        ratioNoseShoulders,
+        neckTiltAngle,
+        distLeftEarNose,
+        distRightEarNose,
+        angleLeftShoulder,
+        angleRightShoulder
+      ];
+    
+      const xs = tf.tensor2d([featVec], [1, 7]);
+      const output = tfModel.predict(xs);
+      const rawVal = output.dataSync()[0]
+      const intVal = Math.round(rawVal * 100, 0)
+      xs.dispose();
+      output.dispose();
+      return intVal;
+    }, [postureScore, tfModel]);
+  
+  const detectPosture = useCallback(async() => {
+    if (
+      !webcamRef.current ||
+      !webcamRef.current.video ||
+      webcamRef.current.video.readyState !== 4
+    ) {
+      return;
+    }
+
+    const video = webcamRef.current.video;
+    const videoWidth = webcamRef.current.video.videoWidth;
+    const videoHeight = webcamRef.current.video.videoHeight;
+    video.width = videoWidth;
+    video.height = videoHeight;
+
+    const poses = await detector.estimatePoses(video);
+    if (poses.length > 0) {
+      const keypoints = poses[0].keypoints;
+      await drawPose(keypoints, video);
+      const score = await calculatePostureScore(keypoints, videoWidth, videoHeight);
+      setPostureScore(score);
+
+      try {
+        await window.api.addPostureSession({
+          score: score
+        })
+        
+        // If score is below 70, send notification
+        if (score < 70 && notificationsEnabled) {
+          new Notification("Poor Posture Detected!", {
+            body: "Your posture score is low. Please adjust your sitting position 🪑",
+            silent: false,
+            icon: './officiallogo.png'
+          })
+        }
+      } catch (error) {
+        console.error('Failed to add posture session:', error)
+      }
+    }
+  }, [detector, calculatePostureScore, drawPose]);
+
+  function distance2D(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  }
+  
+  function angleABC(Ax, Ay, Bx, By, Cx, Cy) {
+    // Angle at B formed by A->B->C, range [0..180].
+    const ABx = Ax - Bx;
+    const ABy = Ay - By;
+    const CBx = Cx - Bx;
+    const CBy = Cy - By;
+  
+    const dot = ABx * CBx + ABy * CBy;
+    const magAB = Math.sqrt(ABx ** 2 + ABy ** 2);
+    const magCB = Math.sqrt(CBx ** 2 + CBy ** 2);
+    if (magAB === 0 || magCB === 0) {
+      return 180.0; 
+    }
+    let cosTheta = dot / (magAB * magCB);
+    cosTheta = Math.max(-1, Math.min(1, cosTheta));
+    return (Math.acos(cosTheta) * 180) / Math.PI;
+  }
+
+  const drawCircle = (ctx, x, y, r) => {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+  };
+
+  useEffect(() => {
+    let newDetector;
+    const initialize = async() => {
+      await tf.setBackend("webgl");
+      await tf.ready();
+
+      const detectorConfig = {
+        runtime: "mediapipe",
+        modelType: "full",
+        enableSmoothing: true,
+        upperBodyOnly: true,
+        solutionPath: "https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/"
+      };
+      newDetector = await poseDetection.createDetector(model, detectorConfig);
+      setDetector(newDetector);
+
+      const modelJsonResp = await fetch("/model/model.json");
+      const modelJson = await modelJsonResp.json();
+
+      const newModel = tf.sequential();
+      
+      const firstLayerConfig = modelJson.config.layers[0].config;
+      firstLayerConfig.inputShape = firstLayerConfig.batch_input_shape.slice(1);
+      newModel.add(tf.layers.dense(firstLayerConfig));
+
+      modelJson.config.layers.slice(1).forEach(layer => {
+        newModel.add(tf.layers.dense(layer.config));
+      });
+
+      // Load weights
+      const weightsData = await fetch("/model/model_weights.json").then(res => res.json());
+      const modelWeights = newModel.getWeights();
+
+      // Map loaded weights to tensors
+      const newWeights = modelWeights.map((w, i) => {
+        const data = Object.values(weightsData[i]);
+        return tf.tensor(data, w.shape);
+      });
+      newModel.setWeights(newWeights);
+
+      setTfModel(newModel);
+      console.log("Model successfully loaded with weights!");
+    };
+    initialize();
+
+    return () => {
+      if (newDetector) {
+        newDetector.dispose();
+      }
+      tf.dispose();
+    };
+  }, [model]);
+
+  useEffect(() => {
+    let id;
+    if (detector) {
+      id = setInterval(() => {
+        detectPosture();
+      }, 100);
+    }
+
+    // Send exercise reminder every min
+    const exerciseInterval = setInterval(sendExerciseReminder, 1000 * 60)
+    return () => {
+      if (id) {
+        clearInterval(id);
+      }
+      if (exerciseInterval) {
+        clearInterval(exerciseInterval);
+      }
+    }
+  }, [detector, detectPosture]);
 
   // Update localStorage when notifications state changes
   useEffect(() => {
@@ -45,47 +342,6 @@ function Home() {
       }
     }
   }
-
-  // Function to check posture and send notification if needed
-  const checkPosture = async () => {
-    const newScore = generateRandomScore()
-    setCurrentScore(newScore)
-    
-    try {
-      await window.api.addPostureSession({
-        score: newScore
-      })
-      
-      // If score is below 60, send notification
-      if (newScore < 60 && notificationsEnabled) {
-        new Notification("Poor Posture Detected!", {
-          body: "Your posture score is low. Please adjust your sitting position 🪑",
-          silent: false,
-          icon: './officiallogo.png'
-        })
-      }
-    } catch (error) {
-      console.error('Failed to add posture session:', error)
-    }
-  }
-
-  // Set up intervals for both posture checks and exercise reminders
-  useEffect(() => {
-    // Initial checks
-    checkPosture()
-    sendExerciseReminder()
-
-    // Check posture every 5 seconds
-    const postureInterval = setInterval(checkPosture, 5000)
-    
-    // Send exercise reminder every 20 minutes
-    const exerciseInterval = setInterval(sendExerciseReminder, 100000)
-
-    return () => {
-      clearInterval(postureInterval)
-      clearInterval(exerciseInterval)
-    }
-  }, [notificationsEnabled]) // Re-run if notifications are toggled
 
   const toggleNotifications = () => {
     setNotificationsEnabled(!notificationsEnabled)
@@ -142,11 +398,31 @@ function Home() {
         <div className="main-content-area">
           <div className="posture-score-display">
             <h2>Current Posture Score</h2>
-            <div className={`score-value ${currentScore < 60 ? 'poor' : 'good'}`}>
-              {currentScore}%
+            <div className={`score-value ${postureScore < 70 ? 'poor' : 'good'}`}>
+              {postureScore}%
             </div>
           </div>
-          <WebcamView />
+          <div className={`webcam-container ${isMinimized ? 'minimized' : ''}`}>
+            <div className="webcam-header">
+              <h3>Posture View</h3>
+              <button className="webcam-toggle" onClick={toggleMinimize}>
+                {isMinimized ? <BiCamera /> : <BiReset />}
+              </button>
+            </div>
+            <div className="webcam-content">
+              <Webcam
+                ref={webcamRef}
+                mirrored={true}
+                className="webcam-view"
+              />
+              <canvas
+                ref={canvasRef} 
+                className="webcam-view" 
+              />
+              <div className="webcam-overlay">
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="side-content-area">
