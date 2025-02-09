@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom'
 
 import * as tf from "@tensorflow/tfjs";
 import * as poseDetection from "@tensorflow-models/pose-detection";
+import * as mpPose from '@mediapipe/pose';
+import "@tensorflow/tfjs-backend-webgl";
 import Webcam from 'react-webcam'
 import { BiCamera, BiReset } from 'react-icons/bi'
 
@@ -249,12 +251,13 @@ function Home() {
       await tf.setBackend("webgl");
       await tf.ready();
 
+      const solutionPath = `https://cdn.jsdelivr.net/npm/@mediapipe/pose@${mpPose.VERSION}`;
+
       const detectorConfig = {
         runtime: "mediapipe",
         modelType: "full",
         enableSmoothing: true,
-        upperBodyOnly: true,
-        solutionPath: "https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/"
+        solutionPath: solutionPath
       };
       newDetector = await poseDetection.createDetector(model, detectorConfig);
       setDetector(newDetector);

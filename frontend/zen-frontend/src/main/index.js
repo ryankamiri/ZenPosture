@@ -4,8 +4,10 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/officiallogo.png?asset'
 
 // Force set app name before anything else
-app.setName('Zen Posture')
-app.dock.setIcon(icon)
+app.setName('Zen Posture');
+if (process.platform === 'darwin') {
+  app.dock.setIcon(icon);
+}
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -13,7 +15,7 @@ function createWindow() {
     height: 768,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    ...(process.platform === 'linux' || process.platform === 'win32' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -31,6 +33,7 @@ function createWindow() {
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    // mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
