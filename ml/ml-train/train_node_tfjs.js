@@ -151,13 +151,13 @@ async function train() {
   });
 
   const modelJson = await model.toJSON();
-  fs.writeFileSync("my_tfjs_model.json", JSON.stringify(modelJson));
-  console.log("Model JSON saved to my_tfjs_model.json");
+  fs.writeFileSync("model.json", JSON.stringify(modelJson));
+  console.log("Model JSON saved to model.json");
 
   const weights = await model.getWeights();
   const weightData = await Promise.all(weights.map(w => w.data()));
-  fs.writeFileSync("my_tfjs_model_weights.json", JSON.stringify(weightData));
-  console.log("Model weights saved to my_tfjs_model_weights.json");
+  fs.writeFileSync("model_weights.json", JSON.stringify(weightData));
+  console.log("Model weights saved to model_weights.json");
 }
 
 // Run it
