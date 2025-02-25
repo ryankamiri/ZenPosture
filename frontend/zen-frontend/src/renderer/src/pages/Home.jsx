@@ -296,7 +296,7 @@ function Home() {
               // Somewhat hunched - moderate penalty
               distanceScore = Math.max(40, 60 - (distNoseShoulders * 150));
             } else if (distNoseShoulders < 0.25) {
-              // Good range
+              // Good range - boost scores in this range to make recovery easier
               distanceScore = 80 + ((distNoseShoulders - 0.18) * 200);
             } else {
               // Too far - slight penalty for leaning back too much
@@ -341,8 +341,11 @@ function Home() {
             if (heuristicScore > 80) {
               heuristicScore = 80 + (heuristicScore - 80) * 0.8;
             } else if (heuristicScore < 50) {
-              // Make it easier to improve from bad posture
-              heuristicScore = heuristicScore * 1.1;
+              // Make it MUCH easier to improve from bad posture
+              heuristicScore = heuristicScore * 1.3;
+            } else if (heuristicScore < 70) {
+              // Medium posture - make it easier to get above 70
+              heuristicScore = heuristicScore * 1.15;
             }
             
             // Round and clamp the score
@@ -353,10 +356,17 @@ function Home() {
             let smoothedScore = finalScore;
             
             if (prevScore !== null) {
-              // Apply lighter smoothing for bad posture (making it easier to improve quickly)
+              // Apply much lighter smoothing for bad posture (making it easier to improve quickly)
               // and stronger smoothing for good posture (making it harder to deteriorate)
-              const smoothingFactor = finalScore < 50 ? 0.7 : 0.85;
+              const smoothingFactor = finalScore < 70 ? 0.5 : 0.85;
               smoothedScore = Math.round((prevScore * smoothingFactor) + (finalScore * (1 - smoothingFactor)));
+              
+              // Additional boost for improving posture
+              if (smoothedScore > prevScore && prevScore < 70) {
+                // If posture is improving from a bad state, give an extra boost
+                const boost = Math.min(10, 70 - prevScore) / 10; // Boost of 0-1 based on how far below 70
+                smoothedScore = Math.min(100, Math.round(smoothedScore * (1 + boost * 0.1)));
+              }
             }
             
             // Log that we're using a heuristic
@@ -398,10 +408,17 @@ function Home() {
           let smoothedScore = clampedVal;
           
           if (prevScore !== null) {
-            // Apply lighter smoothing for bad posture (making it easier to improve quickly)
+            // Apply much lighter smoothing for bad posture (making it easier to improve quickly)
             // and stronger smoothing for good posture (making it harder to deteriorate)
-            const smoothingFactor = clampedVal < 50 ? 0.7 : 0.85;
+            const smoothingFactor = clampedVal < 70 ? 0.5 : 0.85;
             smoothedScore = Math.round((prevScore * smoothingFactor) + (clampedVal * (1 - smoothingFactor)));
+            
+            // Additional boost for improving posture
+            if (smoothedScore > prevScore && prevScore < 70) {
+              // If posture is improving from a bad state, give an extra boost
+              const boost = Math.min(10, 70 - prevScore) / 10; // Boost of 0-1 based on how far below 70
+              smoothedScore = Math.min(100, Math.round(smoothedScore * (1 + boost * 0.1)));
+            }
             
             // Log smoothing occasionally
             if (Math.random() < 0.005) {
@@ -409,6 +426,7 @@ function Home() {
                 prevScore,
                 newScore: clampedVal,
                 smoothingFactor,
+                boostedScore: smoothedScore,
                 result: smoothedScore
               });
             }
@@ -795,7 +813,7 @@ If you're seeing this message, the app will use a fallback model which may not b
               // Somewhat hunched - moderate penalty
               distanceScore = Math.max(40, 60 - (distNoseShoulders * 150));
             } else if (distNoseShoulders < 0.25) {
-              // Good range
+              // Good range - boost scores in this range to make recovery easier
               distanceScore = 80 + ((distNoseShoulders - 0.18) * 200);
             } else {
               // Too far - slight penalty for leaning back too much
@@ -847,9 +865,12 @@ If you're seeing this message, the app will use a fallback model which may not b
               // Good posture is more stable - small changes don't affect it much
               finalScore = 80 + (finalScore - 80) * 0.8;
             } else if (finalScore < 50) {
-              // Bad posture is less stable - easier to improve with small changes
+              // Bad posture is less stable - MUCH easier to improve with small changes
               // This makes it easier to recover from bad posture
-              finalScore = finalScore * 1.1;
+              finalScore = finalScore * 1.3;
+            } else if (finalScore < 70) {
+              // Medium posture - make it easier to get above 70
+              finalScore = finalScore * 1.15;
             }
             
             // Ensure the score is in the 0-100 range
