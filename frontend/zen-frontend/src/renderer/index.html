@@ -8,17 +8,45 @@
     <meta
       http-equiv="Content-Security-Policy"
       content="
-        default-src 'self' https://cdn.jsdelivr.net;
-        connect-src 'self' https://zen-posture-df6c9e802988.herokuapp.com https://cdn.jsdelivr.net;
-        script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net;
+        default-src 'self' https://*.jsdelivr.net https://*.googleapis.com https://*.tfhub.dev https://tfhub.dev https://*.gstatic.com https://*.kaggle.com https://www.kaggle.com;
+        connect-src 'self' https://zen-posture-df6c9e802988.herokuapp.com https://*.jsdelivr.net https://*.googleapis.com https://*.tfhub.dev https://tfhub.dev https://*.gstatic.com ws://localhost:* http://localhost:* https://storage.googleapis.com https://*.kaggle.com https://www.kaggle.com;
+        script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.jsdelivr.net https://*.googleapis.com https://*.tfhub.dev https://tfhub.dev https://*.gstatic.com https://*.kaggle.com https://www.kaggle.com blob:;
         style-src 'self' 'unsafe-inline';
-        img-src 'self' data:;
+        img-src 'self' data: blob: https://*.jsdelivr.net https://*.googleapis.com https://*.tfhub.dev https://tfhub.dev https://*.gstatic.com https://*.kaggle.com https://www.kaggle.com;
         frame-src 'self';
         worker-src 'self' blob:;
-        media-src 'self';
+        media-src 'self' blob: mediadevices:;
       "
     />
-
+    
+    <!-- Preload TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.2.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.2.0/dist/tf-backend-webgl.min.js"></script>
+    <script>
+      // Initialize TensorFlow.js before the application loads
+      window.onload = async function() {
+        try {
+          console.log("Preloading TensorFlow.js...");
+          await tf.ready();
+          console.log("TensorFlow.js preloaded successfully");
+          
+          try {
+            await tf.setBackend('webgl');
+            console.log("WebGL backend initialized in preload");
+          } catch (e) {
+            console.warn("WebGL backend failed in preload, falling back to CPU:", e);
+            await tf.setBackend('cpu');
+            console.log("CPU backend initialized in preload");
+          }
+          
+          // Store in window for the application to use
+          window.tfInitialized = true;
+        } catch (error) {
+          console.error("Error preloading TensorFlow.js:", error);
+          window.tfInitialized = false;
+        }
+      };
+    </script>
   </head>
 
   <body>

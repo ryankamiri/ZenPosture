@@ -4,12 +4,15 @@
   "main": "train_node_tfjs.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "train": "node train_node_tfjs.js",
+    "test": "node test_model.js",
+    "visualize": "node visualize_data.js",
+    "all": "node run_all.js"
   },
   "author": "",
   "license": "ISC",
   "keywords": [],
-  "description": "",
+  "description": "Training scripts for posture detection model",
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
     "papaparse": "^5.5.2"

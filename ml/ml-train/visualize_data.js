@@ -1,6 +1,10 @@
-import * as tf from "@tensorflow/tfjs";
 import * as fs from "fs";
 import Papa from "papaparse";
+
+function safeFloat(val) {
+  const f = parseFloat(val);
+  return isNaN(f) ? null : f;
+}
 
 function distance2D(x1, y1, x2, y2) {
   return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
@@ -21,11 +25,6 @@ function angleABC(Ax, Ay, Bx, By, Cx, Cy) {
   let cosTheta = dot / (magAB * magCB);
   cosTheta = Math.max(-1, Math.min(1, cosTheta));
   return (Math.acos(cosTheta) * 180) / Math.PI;
-}
-
-function safeFloat(val) {
-  const f = parseFloat(val);
-  return isNaN(f) ? null : f;
 }
 
 function extractFeatures(row) {
@@ -96,7 +95,7 @@ function extractFeatures(row) {
   };
 }
 
-async function train() {
+function visualizeData() {
   console.log("Reading CSV...");
   const csvData = fs.readFileSync("posture_data.csv", "utf8");
 
@@ -107,93 +106,80 @@ async function train() {
 
   console.log(`Parsed ${parsed.data.length} rows from CSV.`);
 
-  const XData = [];
-  const YData = [];
+  // Extract features and labels
+  const data = [];
+  const labels = [];
+  const featureNames = [
+    "dist_nose_shoulders",
+    "ratio_noseShoulders",
+    "neck_tilt_angle",
+    "dist_leftEar_nose",
+    "dist_rightEar_nose",
+    "angle_leftShoulder",
+    "angle_rightShoulder"
+  ];
 
   parsed.data.forEach((row) => {
     const item = extractFeatures(row);
     if (item) {
-      XData.push(item.features);
-      YData.push(item.label / 100);
+      data.push(item.features);
+      labels.push(item.label);
     }
   });
 
-  console.log(`After cleaning: ${XData.length} samples.`);
+  console.log(`After cleaning: ${data.length} samples.`);
 
-  if (XData.length < 5) {
-    console.error("Not enough data to train!");
-    return;
-  }
+  // Group data by label ranges
+  const goodPosture = [];
+  const mediumPosture = [];
+  const badPosture = [];
 
-  const xs = tf.tensor2d(XData, [XData.length, 7]);
-  const ys = tf.tensor1d(YData);
-
-  // Create model
-  const model = tf.sequential();
-  model.add(tf.layers.dense({ units: 16, activation: "relu", inputShape: [7] }));
-  model.add(tf.layers.dense({ units: 16, activation: "relu" }));
-  model.add(tf.layers.dense({ units: 1, activation: "sigmoid" }));
-
-  model.compile({
-    optimizer: tf.train.adam(0.001),
-    loss: "meanSquaredError"
-  });
-
-  console.log("Fitting model...");
-  await model.fit(xs, ys, {
-    epochs: 100,
-    batchSize: 8,
-    shuffle: true,
-    callbacks: {
-      onEpochEnd: (epoch, logs) => {
-        console.log(`Epoch ${epoch}, Loss = ${logs.loss.toFixed(4)}`);
-      }
+  for (let i = 0; i < data.length; i++) {
+    if (labels[i] >= 80) {
+      goodPosture.push(data[i]);
+    } else if (labels[i] >= 50) {
+      mediumPosture.push(data[i]);
+    } else {
+      badPosture.push(data[i]);
     }
-  });
-
-  // Create output directory if it doesn't exist
-  if (!fs.existsSync("../ml-test/public/model")) {
-    fs.mkdirSync("../ml-test/public/model", { recursive: true });
   }
 
-  // Save model JSON
-  const modelJson = await model.toJSON();
-  fs.writeFileSync("../ml-test/public/model/model.json", JSON.stringify(modelJson));
-  console.log("Model JSON saved to ../ml-test/public/model/model.json");
+  console.log("\nData Distribution:");
+  console.log(`Good posture (80-100): ${goodPosture.length} samples`);
+  console.log(`Medium posture (50-79): ${mediumPosture.length} samples`);
+  console.log(`Bad posture (0-49): ${badPosture.length} samples`);
 
-  // Save model weights
-  const weights = await model.getWeights();
-  const weightData = await Promise.all(weights.map(w => w.data()));
-  fs.writeFileSync("../ml-test/public/model/model_weights.json", JSON.stringify(weightData));
-  console.log("Model weights saved to ../ml-test/public/model/model_weights.json");
-
-  // Also save locally for reference
-  fs.writeFileSync("model.json", JSON.stringify(modelJson));
-  fs.writeFileSync("model_weights.json", JSON.stringify(weightData));
+  // Calculate feature statistics
+  console.log("\nFeature Statistics:");
   
-  // Evaluate the model
-  const predictions = model.predict(xs);
-  const predValues = predictions.dataSync();
-  
-  // Calculate MSE
-  let mse = 0;
-  for (let i = 0; i < YData.length; i++) {
-    mse += (YData[i] - predValues[i]) ** 2;
-  }
-  mse /= YData.length;
-  
-  console.log(`Model evaluation - MSE: ${mse.toFixed(4)}`);
-  
-  // Print some sample predictions
-  console.log("\nSample predictions:");
-  for (let i = 0; i < Math.min(5, YData.length); i++) {
-    console.log(`Actual: ${(YData[i] * 100).toFixed(0)}, Predicted: ${(predValues[i] * 100).toFixed(0)}`);
+  for (let i = 0; i < featureNames.length; i++) {
+    const featureValues = data.map(d => d[i]);
+    const min = Math.min(...featureValues);
+    const max = Math.max(...featureValues);
+    const avg = featureValues.reduce((a, b) => a + b, 0) / featureValues.length;
+    
+    console.log(`\n${featureNames[i]}:`);
+    console.log(`  Range: ${min.toFixed(4)} to ${max.toFixed(4)}`);
+    console.log(`  Average: ${avg.toFixed(4)}`);
+    
+    // Feature averages by posture category
+    const goodAvg = goodPosture.length > 0 
+      ? goodPosture.map(d => d[i]).reduce((a, b) => a + b, 0) / goodPosture.length 
+      : 0;
+    
+    const mediumAvg = mediumPosture.length > 0 
+      ? mediumPosture.map(d => d[i]).reduce((a, b) => a + b, 0) / mediumPosture.length 
+      : 0;
+    
+    const badAvg = badPosture.length > 0 
+      ? badPosture.map(d => d[i]).reduce((a, b) => a + b, 0) / badPosture.length 
+      : 0;
+    
+    console.log(`  Good posture avg: ${goodAvg.toFixed(4)}`);
+    console.log(`  Medium posture avg: ${mediumAvg.toFixed(4)}`);
+    console.log(`  Bad posture avg: ${badAvg.toFixed(4)}`);
   }
 }
 
 // Run it
-train().then(() => {
-  console.log("Done training!");
-}).catch((err) => {
-  console.error("Error:", err);
-});
+visualizeData(); 
