@@ -159,23 +159,16 @@ function Home() {
       }
 
       try {
-        // Create a map of keypoints for easier access
+        // Create a map of keypoints for easier access (similar to the sample code)
         const kpMap = {};
-        let validKeypoints = 0;
         
         for (const kp of pose.keypoints) {
           if (kp.score > 0.3) { // Only use keypoints with good confidence
             kpMap[kp.name] = kp;
-            validKeypoints++;
           }
         }
         
-        // Log how many valid keypoints we have
-        if (Math.random() < 0.01) { // Log occasionally
-          console.log(`Valid keypoints: ${validKeypoints}/${pose.keypoints.length}`);
-        }
-
-        // Check if we have all the required keypoints
+        // Check if we have all the required keypoints - same as sample code
         const requiredKeypoints = [
           "nose", "left_shoulder", "right_shoulder", 
           "left_ear", "right_ear"
@@ -190,6 +183,7 @@ function Home() {
           }
         }
     
+        // Normalize function - same as sample code
         function norm(name) {
           return {
             x: kpMap[name].x / videoWidth,
@@ -197,20 +191,20 @@ function Home() {
           };
         }
         
-        // Extract normalized keypoints
+        // Extract normalized keypoints - identical to sample code
         const nose = norm("nose");
         const lsho = norm("left_shoulder");
         const rsho = norm("right_shoulder");
         const lear = norm("left_ear");
         const rear = norm("right_ear");
       
-        // Calculate midpoint between shoulders
+        // Calculate midpoint between shoulders - identical to sample code
         const msho = {
           x: (lsho.x + rsho.x) / 2,
           y: (lsho.y + rsho.y) / 2
         };
       
-        // Calculate features exactly as in the training code
+        // Calculate features exactly like in the sample code
         const distNoseShoulders = distance2D(nose.x, nose.y, msho.x, msho.y);
         const distShoulders = distance2D(lsho.x, lsho.y, rsho.x, rsho.y);
         const ratioNoseShoulders = distShoulders > 0 
@@ -223,7 +217,7 @@ function Home() {
         const angleLeftShoulder = angleABC(lear.x, lear.y, lsho.x, lsho.y, nose.x, nose.y);
         const angleRightShoulder = angleABC(rear.x, rear.y, rsho.x, rsho.y, nose.x, nose.y);
       
-        // Create feature vector in the same order as training
+        // Create feature vector like in the sample code
         const featVec = [
           distNoseShoulders,
           ratioNoseShoulders,
@@ -234,205 +228,64 @@ function Home() {
           angleRightShoulder
         ];
       
-        // Log features for debugging
-        if (Math.random() < 0.01) { // Log occasionally to avoid flooding console
+        // Log features occasionally for debugging
+        if (Math.random() < 0.01) {
           console.log("Feature vector:", featVec);
         }
       
-        // Make prediction using the model
+        // Make prediction using the model - simplified like in the sample code
         try {
           const xs = tf.tensor2d([featVec], [1, 7]);
-          
-          // Check if tensor is valid
-          if (!xs || xs.shape.length !== 2 || xs.shape[0] !== 1 || xs.shape[1] !== 7) {
-            console.error("Invalid feature tensor shape:", xs ? xs.shape : "null");
-            xs && xs.dispose();
-            return postureScoreRef.current;
-          }
-          
-          // Log tensor values occasionally for debugging
-          if (Math.random() < 0.005) {
-            console.log("Feature tensor:", xs.arraySync());
-          }
           
           // Make prediction
           const output = tfModel.predict(xs);
           
-          // Check if output is valid
-          if (!output || output.shape.length !== 2 || output.shape[0] !== 1 || output.shape[1] !== 1) {
-            console.error("Invalid output tensor shape:", output ? output.shape : "null");
-            xs.dispose();
-            output && output.dispose();
-            return postureScoreRef.current;
-          }
-          
           // Get prediction value
           const rawVal = output.dataSync()[0];
           
-          // Check if prediction is valid
-          if (rawVal === undefined || isNaN(rawVal)) {
-            console.error("Invalid prediction value:", rawVal);
-            xs.dispose();
-            output.dispose();
-            return postureScoreRef.current;
-          }
-          
-          // If the model is returning all zeros, use a heuristic approach
-          if (rawVal === 0) {
-            // Calculate a heuristic score based on the features
-            // Using the same approach as our fallback model
-            
-            // 1. Neck tilt score - good posture has neck tilt angle closer to 180
-            const neckTiltScore = Math.pow(neckTiltAngle / 180, 1.5) * 100;
-            
-            // 2. Head position score - based on ratio of nose to shoulders and distance
-            // Calculate a baseline distance score - this will detect hunching
-            // We want to penalize when distNoseShoulders gets too small (hunching forward)
-            let distanceScore = 0;
-            if (distNoseShoulders < 0.12) {
-              // Very hunched - severe penalty
-              distanceScore = Math.max(10, 30 - (distNoseShoulders * 200));
-            } else if (distNoseShoulders < 0.18) {
-              // Somewhat hunched - moderate penalty
-              distanceScore = Math.max(40, 60 - (distNoseShoulders * 150));
-            } else if (distNoseShoulders < 0.25) {
-              // Good range - boost scores in this range to make recovery easier
-              distanceScore = 80 + ((distNoseShoulders - 0.18) * 200);
-            } else {
-              // Too far - slight penalty for leaning back too much
-              distanceScore = Math.max(60, 100 - ((distNoseShoulders - 0.25) * 200));
-            }
-            
-            // Now handle the ratio (which is related but captures different aspects of posture)
-            let ratioScore = 0;
-            if (ratioNoseShoulders < 0.5) {
-              // Good posture range - high score
-              ratioScore = 90 - (ratioNoseShoulders * 20);
-            } else if (ratioNoseShoulders < 0.7) {
-              // Medium posture range - medium score
-              ratioScore = 80 - (ratioNoseShoulders * 40);
-            } else {
-              // Bad posture range - low score
-              ratioScore = Math.max(10, 60 - (ratioNoseShoulders * 50));
-            }
-            
-            // Combine distance and ratio scores, with more weight on the distance
-            const headPositionScore = (distanceScore * 0.7) + (ratioScore * 0.3);
-            
-            // 3. Ear-nose distance score
-            const earAsymmetry = Math.abs(distLeftEarNose - distRightEarNose);
-            const earAvgDist = (distLeftEarNose + distRightEarNose) / 2;
-            const earScore = Math.max(0, 100 - (earAsymmetry * 200) - (earAvgDist * 100));
-            
-            // 4. Shoulder angle score
-            const shoulderAngleAvg = (angleLeftShoulder + angleRightShoulder) / 2;
-            const shoulderScore = Math.min(100, shoulderAngleAvg * 1.5);
-            
-            // Combine all scores with weights
-            const weightedScore = (
-              (neckTiltScore * 0.35) +
-              (headPositionScore * 0.45) +
-              (earScore * 0.1) +
-              (shoulderScore * 0.1)
-            );
-            
-            // Apply stability adjustments
-            let heuristicScore = weightedScore;
-            if (heuristicScore > 80) {
-              heuristicScore = 80 + (heuristicScore - 80) * 0.8;
-            } else if (heuristicScore < 50) {
-              // Make it MUCH easier to improve from bad posture
-              heuristicScore = heuristicScore * 1.3;
-            } else if (heuristicScore < 70) {
-              // Medium posture - make it easier to get above 70
-              heuristicScore = heuristicScore * 1.15;
-            }
-            
-            // Round and clamp the score
-            const finalScore = Math.max(10, Math.min(100, Math.round(heuristicScore)));
-            
-            // Apply smoothing to prevent score from changing too drastically between frames
-            const prevScore = postureScoreRef.current;
-            let smoothedScore = finalScore;
-            
-            if (prevScore !== null) {
-              // Apply much lighter smoothing for bad posture (making it easier to improve quickly)
-              // and stronger smoothing for good posture (making it harder to deteriorate)
-              const smoothingFactor = finalScore < 70 ? 0.5 : 0.85;
-              smoothedScore = Math.round((prevScore * smoothingFactor) + (finalScore * (1 - smoothingFactor)));
-              
-              // Additional boost for improving posture
-              if (smoothedScore > prevScore && prevScore < 70) {
-                // If posture is improving from a bad state, give an extra boost
-                const boost = Math.min(10, 70 - prevScore) / 10; // Boost of 0-1 based on how far below 70
-                smoothedScore = Math.min(100, Math.round(smoothedScore * (1 + boost * 0.1)));
-              }
-            }
-            
-            // Log that we're using a heuristic
-            if (Math.random() < 0.01) {
-              console.log("Using heuristic score:", smoothedScore, "due to zero model output", {
-                distNoseShoulders,
-                ratioNoseShoulders,
-                distanceScore,
-                ratioScore,
-                headPositionScore,
-                neckTiltScore,
-                earScore,
-                shoulderScore,
-                weightedScore,
-                finalScore,
-                smoothedScore
-              });
-            }
-            
-            // Clean up tensors
-            xs.dispose();
-            output.dispose();
-            
-            // Return the heuristic score
-            return smoothedScore;
-          }
-          
+          // More straightforward calculation like in sample code
           const intVal = Math.round(rawVal * 100);
           
-          // Clamp value to 0-100 range
-          const clampedVal = Math.max(0, Math.min(100, intVal));
-          
-          // Clean up tensors to prevent memory leaks
+          // Clean up tensors
           xs.dispose();
           output.dispose();
           
-          // Apply smoothing to prevent score from changing too drastically between frames
+          // Apply adaptive smoothing to allow more fluctuation while preventing wild jumps
           const prevScore = postureScoreRef.current;
-          let smoothedScore = clampedVal;
+          let smoothedScore = intVal;
           
           if (prevScore !== null) {
-            // Apply much lighter smoothing for bad posture (making it easier to improve quickly)
-            // and stronger smoothing for good posture (making it harder to deteriorate)
-            const smoothingFactor = clampedVal < 70 ? 0.5 : 0.85;
-            smoothedScore = Math.round((prevScore * smoothingFactor) + (clampedVal * (1 - smoothingFactor)));
+            // Adjust smoothing factor based on score range and change magnitude
+            let smoothingFactor = 0.3; // Default smoothing
             
-            // Additional boost for improving posture
-            if (smoothedScore > prevScore && prevScore < 70) {
-              // If posture is improving from a bad state, give an extra boost
-              const boost = Math.min(10, 70 - prevScore) / 10; // Boost of 0-1 based on how far below 70
-              smoothedScore = Math.min(100, Math.round(smoothedScore * (1 + boost * 0.1)));
+            const scoreDiff = Math.abs(intVal - prevScore);
+            
+            // Less smoothing for bad posture to allow scores to drop quickly
+            if (intVal < 50) {
+              smoothingFactor = 0.2;
             }
             
-            // Log smoothing occasionally
-            if (Math.random() < 0.005) {
-              console.log("Smoothing applied:", {
-                prevScore,
-                newScore: clampedVal,
-                smoothingFactor,
-                boostedScore: smoothedScore,
-                result: smoothedScore
-              });
+            // Even less smoothing for very bad posture
+            if (intVal < 30) {
+              smoothingFactor = 0.1;
+            }
+            
+            // More smoothing for big jumps to prevent wild fluctuations
+            if (scoreDiff > 15) {
+              smoothingFactor = Math.min(0.5, smoothingFactor + 0.2);
+            }
+            
+            // Apply smoothing
+            smoothedScore = Math.round((prevScore * smoothingFactor) + (intVal * (1 - smoothingFactor)));
+            
+            // Log occasionally for debugging
+            if (Math.random() < 0.02) {
+              console.log(`Score smoothing: raw=${intVal}, prev=${prevScore}, smoothed=${smoothedScore}, factor=${smoothingFactor}`);
             }
           }
           
-          return smoothedScore;
+          // Ensure the score is in the 0-100 range
+          return Math.max(0, Math.min(100, smoothedScore));
         } catch (predictionError) {
           console.error("Error making prediction:", predictionError);
           return postureScoreRef.current;
@@ -599,9 +452,6 @@ function Home() {
           console.log("Using CPU backend");
         }
         
-        // Check if model files exist and provide guidance
-        await checkModelFiles();
-        
         // Load the posture detection model
         console.log("Loading posture detection model...");
         
@@ -647,13 +497,169 @@ function Home() {
         
         setDetector(detector);
         
-        // Load the posture scoring model
+        // SIMPLIFIED MODEL LOADING APPROACH
         console.log("Loading posture scoring model...");
-        const postureModel = await loadPostureModel();
-        if (!postureModel) {
-          console.warn("Failed to load posture model, using fallback");
-        } else {
-          console.log("Posture model loaded successfully");
+        
+        // Create fallback model in case we can't load the real one
+        const fallbackModel = createFallbackModel();
+        
+        try {
+          // For Electron, we need to use the right path pattern
+          // In dev mode, public files are directly in the renderer folder
+          const modelPaths = [
+            './model/model.json', 
+            '../model/model.json',
+            '../../model/model.json'
+          ];
+          
+          // Try each potential path
+          let loadedModel = null;
+          let successPath = null;
+          
+          for (const path of modelPaths) {
+            try {
+              console.log(`Attempting to load model from: ${path}`);
+              
+              // First check if the file exists
+              const response = await fetch(path, { method: 'HEAD' });
+              if (!response.ok) {
+                console.log(`File not found at ${path}, skipping`);
+                continue;
+              }
+              
+              // Try to load the model
+              loadedModel = await tf.loadLayersModel(path);
+              if (loadedModel) {
+                successPath = path;
+                console.log(`✅ Model successfully loaded from ${path}!`);
+                break;
+              }
+            } catch (err) {
+              console.warn(`Error loading from ${path}:`, err);
+            }
+          }
+          
+          // If we couldn't load the model through tf.loadLayersModel, try our manual approach
+          if (!loadedModel) {
+            console.log("Standard loading failed, trying manual model creation...");
+            
+            // Create a simple model that matches our expected architecture
+            const manualModel = tf.sequential();
+            
+            // Add input layer (7 features)
+            manualModel.add(tf.layers.dense({
+              units: 16,
+              activation: 'relu',
+              inputShape: [7],
+              name: 'dense_1'
+            }));
+            
+            // Add hidden layer
+            manualModel.add(tf.layers.dense({
+              units: 16, 
+              activation: 'relu',
+              name: 'dense_2'
+            }));
+            
+            // Add output layer (1 output - the posture score)
+            manualModel.add(tf.layers.dense({
+              units: 1,
+              activation: 'sigmoid',
+              name: 'dense_3'
+            }));
+            
+            console.log("Manual model structure created");
+            
+            // Try to load weights from the weights file
+            try {
+              const weightsPath = './model/model_weights.json';
+              const weightsResponse = await fetch(weightsPath);
+              
+              if (weightsResponse.ok) {
+                const weightsData = await weightsResponse.json();
+                console.log("Weights file loaded successfully");
+                
+                // Convert the weights data to tensors and set to model
+                // This assumes the weights are in the correct format with shapes that match our model
+                if (Array.isArray(weightsData)) {
+                  try {
+                    // Prepare tensors from the weights data
+                    const tensors = [];
+                    let currentIndex = 0;
+                    
+                    // First dense layer weights (kernel and bias)
+                    // Kernel shape should be [7, 16]
+                    const kernel1Values = Object.values(weightsData[0]);
+                    const kernel1 = tf.tensor2d(kernel1Values, [7, 16]);
+                    tensors.push(kernel1);
+                    
+                    // Bias shape should be [16]
+                    const bias1Values = Object.values(weightsData[1]);
+                    const bias1 = tf.tensor1d(bias1Values);
+                    tensors.push(bias1);
+                    
+                    // Second dense layer weights (kernel and bias)
+                    // Kernel shape should be [16, 16]
+                    const kernel2Values = Object.values(weightsData[2]);
+                    const kernel2 = tf.tensor2d(kernel2Values, [16, 16]);
+                    tensors.push(kernel2);
+                    
+                    // Bias shape should be [16]
+                    const bias2Values = Object.values(weightsData[3]);
+                    const bias2 = tf.tensor1d(bias2Values);
+                    tensors.push(bias2);
+                    
+                    // Output layer weights (kernel and bias)
+                    // Kernel shape should be [16, 1]
+                    const kernel3Values = Object.values(weightsData[4]);
+                    const kernel3 = tf.tensor2d(kernel3Values, [16, 1]);
+                    tensors.push(kernel3);
+                    
+                    // Bias shape should be [1]
+                    const bias3Values = Object.values(weightsData[5]);
+                    const bias3 = tf.tensor1d(bias3Values);
+                    tensors.push(bias3);
+                    
+                    // Set weights to the model
+                    manualModel.setWeights(tensors);
+                    console.log("Weights set successfully to manual model");
+                    
+                    // Clean up tensors
+                    tensors.forEach(t => t.dispose());
+                    
+                    // Use this model
+                    loadedModel = manualModel;
+                    console.log("Manual model with weights created successfully");
+                  } catch (weightSetError) {
+                    console.error("Error setting weights to manual model:", weightSetError);
+                  }
+                } else {
+                  console.warn("Weights data is not an array:", weightsData);
+                }
+              } else {
+                console.warn("Could not load weights file from", weightsPath);
+              }
+            } catch (weightsError) {
+              console.error("Error loading or applying weights:", weightsError);
+            }
+          }
+          
+          // If we have successfully loaded a model, use it
+          if (loadedModel) {
+            console.log("Using loaded model");
+            loadedModel.name = "trained_model";
+            loadedModel.isTrainedModel = true;
+            setTfModel(loadedModel);
+          } else {
+            console.warn("Could not load trained model, using fallback");
+            setTfModel(fallbackModel);
+            setError("Using fallback model: Trained model could not be loaded");
+          }
+        } catch (modelError) {
+          console.error("Error in model loading process:", modelError);
+          console.warn("Using fallback model due to error");
+          setTfModel(fallbackModel);
+          setError(`Error loading model: ${modelError.message}. Using fallback.`);
         }
         
         setIsLoading(false);
@@ -664,291 +670,183 @@ function Home() {
       }
     };
 
-    // Function to check if model files exist and provide guidance
-    const checkModelFiles = async () => {
-      console.log("Checking for model files...");
+    // Function to create the fallback model
+    const createFallbackModel = () => {
+      console.log("Creating a fallback model - WARNING: Using heuristic approach instead of trained model");
       
-      // Define paths to check - updated with the correct paths based on our findings
-      const modelPaths = [
-        '/model/model.json',
-        './model/model.json',
-        '../model/model.json',
-        '../../model/model.json',
-        '/public/model/model.json',
-        './public/model/model.json',
-        '/renderer/public/model/model.json',
-        './renderer/public/model/model.json',
-        '../renderer/public/model/model.json'
+      // Create a simple fallback model that maps features to scores
+      const fallbackModel = {
+        name: "fallback_heuristic_model",
+        isTrainedModel: false,
+        predict: function(tensor) {
+          // Get the features from the tensor
+          const features = tensor.arraySync()[0];
+          
+          // Extract key features
+          const distNoseShoulders = features[0];
+          const ratioNoseShoulders = features[1];
+          const neckTiltAngle = features[2];
+          const distLeftEarNose = features[3];
+          const distRightEarNose = features[4];
+          const angleLeftShoulder = features[5];
+          const angleRightShoulder = features[6];
+          
+          // Log features more frequently for debugging
+          if (Math.random() < 0.05) {
+            console.log("Raw posture features:", {
+              distNoseShoulders,
+              ratioNoseShoulders,
+              neckTiltAngle,
+              distLeftEarNose,
+              distRightEarNose,
+              angleLeftShoulder,
+              angleRightShoulder
+            });
+          }
+          
+          // Enhanced scoring logic to better differentiate between good and bad posture
+          
+          // 1. Neck tilt score - good posture has neck tilt angle closer to 180
+          // Normalize to 0-100 scale with more sensitivity
+          const neckTiltScore = Math.pow(neckTiltAngle / 180, 1.2) * 100;
+          
+          // 2. Distance score - measures how far nose is from shoulders (hunching)
+          let distanceScore = 0;
+          if (distNoseShoulders < 0.08) {
+            // Very hunched - severe penalty (0-30)
+            distanceScore = 0;
+          } else if (distNoseShoulders < 0.12) {
+            // Hunched - low score (30-45)
+            distanceScore = 30 + ((distNoseShoulders - 0.08) * 375);
+          } else if (distNoseShoulders < 0.16) {
+            // Slightly hunched - moderate score (45-65)
+            distanceScore = 45 + ((distNoseShoulders - 0.12) * 500);
+          } else if (distNoseShoulders < 0.22) {
+            // Good range - high score (65-90)
+            distanceScore = 65 + ((distNoseShoulders - 0.16) * 417);
+          } else {
+            // Too far back - slight penalty
+            distanceScore = Math.max(50, 90 - ((distNoseShoulders - 0.22) * 250));
+          }
+          
+          // 3. Ratio score - nose-to-shoulders ratio
+          let ratioScore = 0;
+          if (ratioNoseShoulders < 0.4) {
+            // Excellent ratio (85-100)
+            ratioScore = 85 + ((0.4 - ratioNoseShoulders) * 37.5);
+          } else if (ratioNoseShoulders < 0.5) {
+            // Good ratio (65-85)
+            ratioScore = 65 + ((0.5 - ratioNoseShoulders) * 200);
+          } else if (ratioNoseShoulders < 0.65) {
+            // Average ratio (45-65)
+            ratioScore = 45 + ((0.65 - ratioNoseShoulders) * 133);
+          } else if (ratioNoseShoulders < 0.8) {
+            // Poor ratio (20-45)
+            ratioScore = 20 + ((0.8 - ratioNoseShoulders) * 167);
+          } else {
+            // Very poor ratio (0-20)
+            ratioScore = Math.max(0, 20 - ((ratioNoseShoulders - 0.8) * 60));
+          }
+          
+          // 4. Ear position score - measures head tilt and rotation
+          const earAsymmetry = Math.abs(distLeftEarNose - distRightEarNose);
+          const earAvgDist = (distLeftEarNose + distRightEarNose) / 2;
+          
+          // Penalize asymmetry and large distances
+          const earScore = Math.max(0, 100 - (earAsymmetry * 300) - (earAvgDist * 150));
+          
+          // 5. Shoulder angle score - higher values are better for good posture
+          const shoulderAngleAvg = (angleLeftShoulder + angleRightShoulder) / 2;
+          const shoulderAsymmetry = Math.abs(angleLeftShoulder - angleRightShoulder);
+          
+          // Score based on shoulder angle and symmetry
+          const shoulderScore = Math.min(100, Math.max(0, 
+            20 + (shoulderAngleAvg * 1.2) - (shoulderAsymmetry * 1.5)
+          ));
+          
+          // Combine all scores with adjusted weights
+          // Head position (distance + ratio) is most important
+          const combinedScore = (
+            (neckTiltScore * 0.25) +
+            (distanceScore * 0.3) +
+            (ratioScore * 0.25) +
+            (earScore * 0.1) +
+            (shoulderScore * 0.1)
+          );
+          
+          // Adjust the final score to ensure good range (65-100) and bad range (<50)
+          let finalScore = combinedScore;
+          
+          // Boost good postures and penalize bad postures to widen the range
+          if (finalScore > 65) {
+            // Boost good posture scores to ensure they reach higher values
+            finalScore = 65 + ((finalScore - 65) * 1.15);
+          } else if (finalScore < 50) {
+            // Make bad posture scores even lower
+            finalScore = finalScore * 0.9;
+          }
+          
+          // Ensure score is in 0-100 range
+          finalScore = Math.min(100, Math.max(0, Math.round(finalScore)));
+          
+          // Log calculations occasionally for debugging
+          if (Math.random() < 0.05) {
+            console.log("Score calculation:", {
+              neckTiltScore,
+              distanceScore,
+              ratioScore,
+              earScore,
+              shoulderScore,
+              combinedScore,
+              finalScore
+            });
+          }
+          
+          // Return as tensor like the real model would
+          return tf.tensor2d([[finalScore / 100]]);
+        },
+        
+        // Add a dispose method to match the TensorFlow model API
+        dispose: function() {
+          console.log("Disposing fallback model");
+        }
+      };
+      
+      // Test the model with different posture examples
+      const testPostures = [
+        // Good posture examples
+        [0.17, 0.4, 170, 0.15, 0.15, 50, 50],  // Excellent posture
+        [0.16, 0.5, 160, 0.18, 0.18, 45, 45],  // Good posture
+        
+        // Average posture examples  
+        [0.14, 0.6, 150, 0.2, 0.2, 40, 40],    // Slightly above average
+        [0.12, 0.65, 140, 0.22, 0.22, 35, 35], // Average posture
+        
+        // Bad posture examples
+        [0.1, 0.7, 130, 0.25, 0.25, 30, 30],   // Bad posture
+        [0.08, 0.85, 120, 0.3, 0.3, 25, 25]    // Very bad posture
       ];
       
-      // Check each path
-      let modelFound = false;
-      let foundPath = null;
+      // Test each posture and log the scores
+      console.log("Testing fallback model with different posture examples:");
+      testPostures.forEach((features, i) => {
+        const testTensor = tf.tensor2d([features], [1, 7]);
+        const prediction = fallbackModel.predict(testTensor);
+        const score = Math.round(prediction.dataSync()[0] * 100);
+        
+        let quality = "";
+        if (score >= 65) quality = "GOOD";
+        else if (score >= 50) quality = "AVERAGE";
+        else quality = "BAD";
+        
+        console.log(`Posture example ${i+1}: Score = ${score}% (${quality})`);
+        
+        // Clean up test tensor
+        testTensor.dispose();
+        prediction.dispose();
+      });
       
-      for (const path of modelPaths) {
-        try {
-          const response = await fetch(path, { method: 'HEAD' });
-          if (response.ok) {
-            console.log(`Model file found at ${path}`);
-            modelFound = true;
-            foundPath = path;
-            break;
-          }
-        } catch (e) {
-          // Ignore fetch errors
-        }
-      }
-      
-      if (!modelFound) {
-        // Provide detailed guidance on where to place model files
-        const message = `
-MODEL FILES NOT FOUND! Please ensure model files are in the correct location:
-
-1. For development mode:
-   - Place model.json and model.weights.bin in:
-     frontend/zen-frontend/src/renderer/public/model/
-
-2. For production mode:
-   - Place model.json and model.weights.bin in:
-     frontend/zen-frontend/out/renderer/model/
-
-3. Available model files in your project:
-   - /Users/aadibiyani/ZenPosture/frontend/zen-frontend/out/renderer/model/model.json
-   - /Users/aadibiyani/ZenPosture/frontend/zen-frontend/src/renderer/public/model/model.json
-   - /Users/aadibiyani/ZenPosture/ml/ml-train/model.json
-   - /Users/aadibiyani/ZenPosture/ml/ml-test/public/model/model.json
-
-If you're seeing this message, the app will use a fallback model which may not be as accurate.
-`;
-        console.warn(message);
-        setError("Model files not found in expected locations. Using fallback model.");
-      } else {
-        console.log(`Using model from: ${foundPath}`);
-      }
-      
-      return modelFound;
-    };
-
-    const loadPostureModel = async() => {
-      try {
-        // Simplify model loading with a more direct approach
-        console.log("Attempting to load posture model...");
-        
-        // Define model paths to try in order of preference - updated with the correct paths
-        const modelPaths = [
-          '/model/model.json',
-          './model/model.json',
-          '../model/model.json',
-          '../../model/model.json',
-          '/public/model/model.json',
-          './public/model/model.json',
-          '/renderer/public/model/model.json',
-          './renderer/public/model/model.json',
-          '../renderer/public/model/model.json'
-        ];
-        
-        console.log("Will try these model paths:", modelPaths);
-        
-        // Try each path
-        let loadedModel = null;
-        let lastError = null;
-        
-        for (const modelPath of modelPaths) {
-          try {
-            console.log(`Trying to load model from: ${modelPath}`);
-            
-            // Attempt to load the model
-            loadedModel = await tf.loadLayersModel(modelPath);
-            
-            if (loadedModel) {
-              console.log(`Successfully loaded model from ${modelPath}`);
-              setTfModel(loadedModel);
-              return loadedModel;
-            }
-          } catch (e) {
-            console.warn(`Failed to load model from ${modelPath}:`, e);
-            lastError = e;
-          }
-        }
-        
-        // If all paths failed, create a fallback model
-        console.warn("All model loading attempts failed, using fallback model");
-        if (lastError) {
-          console.error("Last error:", lastError);
-        }
-        
-        // Create a simple fallback model with pre-initialized weights
-        console.log("Creating a pre-trained fallback model");
-        
-        // Instead of a complex neural network, create a simple function that maps features to scores
-        // This ensures we get reasonable scores even without the trained model
-        const fallbackModel = {
-          predict: function(tensor) {
-            // Get the features from the tensor
-            const features = tensor.arraySync()[0];
-            
-            // Extract key features
-            const distNoseShoulders = features[0];  // Lower is better
-            const ratioNoseShoulders = features[1]; // Lower is better
-            const neckTiltAngle = features[2];      // Higher is better (closer to 180)
-            const distLeftEarNose = features[3];    // Lower is better
-            const distRightEarNose = features[4];   // Lower is better
-            const angleLeftShoulder = features[5];  // Higher is better
-            const angleRightShoulder = features[6]; // Higher is better
-            
-            // Create a more sophisticated scoring system that mimics the trained model
-            
-            // 1. Neck tilt score - good posture has neck tilt angle closer to 180
-            // Scale from 0-100, but make it less sensitive to small changes
-            const neckTiltScore = Math.pow(neckTiltAngle / 180, 1.5) * 100;
-            
-            // 2. Head position score - based on ratio of nose to shoulders
-            // Lower ratio is better (head aligned with shoulders)
-            // Make this more sensitive to hunching (decreased distance)
-            let distanceScore = 0;
-            if (distNoseShoulders < 0.12) {
-              // Very hunched - severe penalty
-              distanceScore = Math.max(10, 30 - (distNoseShoulders * 200));
-            } else if (distNoseShoulders < 0.18) {
-              // Somewhat hunched - moderate penalty
-              distanceScore = Math.max(40, 60 - (distNoseShoulders * 150));
-            } else if (distNoseShoulders < 0.25) {
-              // Good range - boost scores in this range to make recovery easier
-              distanceScore = 80 + ((distNoseShoulders - 0.18) * 200);
-            } else {
-              // Too far - slight penalty for leaning back too much
-              distanceScore = Math.max(60, 100 - ((distNoseShoulders - 0.25) * 200));
-            }
-            
-            // Now handle the ratio (which is related but captures different aspects of posture)
-            let ratioScore = 0;
-            if (ratioNoseShoulders < 0.5) {
-              // Good posture range - high score
-              ratioScore = 90 - (ratioNoseShoulders * 20);
-            } else if (ratioNoseShoulders < 0.7) {
-              // Medium posture range - medium score
-              ratioScore = 80 - (ratioNoseShoulders * 40);
-            } else {
-              // Bad posture range - low score
-              ratioScore = Math.max(10, 60 - (ratioNoseShoulders * 50));
-            }
-            
-            // Combine distance and ratio scores, with more weight on the distance
-            const headPositionScore = (distanceScore * 0.7) + (ratioScore * 0.3);
-            
-            // 3. Ear-nose distance score - should be balanced and small
-            // Calculate asymmetry and average distance
-            const earAsymmetry = Math.abs(distLeftEarNose - distRightEarNose);
-            const earAvgDist = (distLeftEarNose + distRightEarNose) / 2;
-            
-            // Penalize asymmetry and large distances
-            const earScore = Math.max(0, 100 - (earAsymmetry * 200) - (earAvgDist * 100));
-            
-            // 4. Shoulder angle score - higher angles are better
-            const shoulderAngleAvg = (angleLeftShoulder + angleRightShoulder) / 2;
-            const shoulderScore = Math.min(100, shoulderAngleAvg * 1.5);
-            
-            // Combine all scores with weights that emphasize head position and neck tilt
-            const weightedScore = (
-              (neckTiltScore * 0.35) +
-              (headPositionScore * 0.45) +
-              (earScore * 0.1) +
-              (shoulderScore * 0.1)
-            );
-            
-            // Apply a non-linear transformation to make the score less sensitive to small changes
-            // This will keep the score from changing too drastically with small posture changes
-            let finalScore = weightedScore;
-            
-            // Add stability - if the score is good (above 80), make it more stable
-            if (finalScore > 80) {
-              // Good posture is more stable - small changes don't affect it much
-              finalScore = 80 + (finalScore - 80) * 0.8;
-            } else if (finalScore < 50) {
-              // Bad posture is less stable - MUCH easier to improve with small changes
-              // This makes it easier to recover from bad posture
-              finalScore = finalScore * 1.3;
-            } else if (finalScore < 70) {
-              // Medium posture - make it easier to get above 70
-              finalScore = finalScore * 1.15;
-            }
-            
-            // Ensure the score is in the 0-100 range
-            finalScore = Math.max(10, Math.min(100, Math.round(finalScore)));
-            
-            // Apply smoothing with previous score (this will be applied in calculatePostureScore)
-            // The smoothing is handled in the calculatePostureScore function
-            
-            // Log the calculation occasionally for debugging
-            if (Math.random() < 0.01) {
-              console.log("Fallback model calculation:", {
-                features,
-                distNoseShoulders,
-                ratioNoseShoulders,
-                neckTiltScore,
-                distanceScore,
-                ratioScore,
-                headPositionScore,
-                earScore,
-                shoulderScore,
-                weightedScore,
-                finalScore
-              });
-            }
-            
-            // Create a tensor with the result
-            return tf.tensor2d([[finalScore / 100]]);
-          },
-          
-          // Add a dummy dispose method to match the TensorFlow model API
-          dispose: function() {
-            console.log("Disposing fallback model");
-          }
-        };
-        
-        // Test the fallback model with a range of posture examples
-        const testPostures = [
-          // Good posture examples
-          [0.15, 0.5, 160, 0.2, 0.2, 45, 45],    // Very good posture
-          [0.16, 0.52, 155, 0.21, 0.21, 43, 43], // Good posture
-          
-          // Medium posture examples
-          [0.18, 0.6, 140, 0.25, 0.25, 40, 40],  // Medium posture
-          [0.20, 0.65, 130, 0.27, 0.27, 38, 38], // Medium-poor posture
-          
-          // Bad posture examples
-          [0.25, 0.8, 120, 0.3, 0.3, 30, 30],    // Poor posture
-          [0.28, 0.85, 110, 0.32, 0.32, 25, 25]  // Very poor posture
-        ];
-        
-        // Create test tensors and make predictions
-        console.log("Testing fallback model with various posture examples:");
-        
-        for (let i = 0; i < testPostures.length; i++) {
-          const testTensor = tf.tensor2d([testPostures[i]], [1, 7]);
-          const prediction = fallbackModel.predict(testTensor);
-          const score = Math.round(prediction.dataSync()[0] * 100);
-          
-          let postureQuality;
-          if (i < 2) postureQuality = "Good";
-          else if (i < 4) postureQuality = "Medium";
-          else postureQuality = "Bad";
-          
-          console.log(`- ${postureQuality} posture example ${i % 2 + 1}: Score = ${score}`);
-          
-          // Clean up tensors
-          testTensor.dispose();
-          prediction.dispose();
-        }
-        
-        console.log("Fallback model created and tested");
-        setTfModel(fallbackModel);
-        return fallbackModel;
-      } catch (error) {
-        console.error("Error loading posture model:", error);
-        setError(`Failed to load posture model: ${error.message}`);
-        return null;
-      }
+      return fallbackModel;
     };
 
     // Call initialize function
@@ -1135,21 +1033,20 @@ If you're seeing this message, the app will use a fallback model which may not b
     }
   }, [webcamRef.current, canvasRef.current]);
 
-  // Add a useEffect to verify model loading
+  // Add a useEffect to verify model loading and show a clear indicator
   useEffect(() => {
     if (tfModel) {
-      console.log("TensorFlow model is loaded and ready");
+      const isUsingTrainedModel = tfModel.isTrainedModel === true;
+      
+      console.log(`Current model: ${isUsingTrainedModel ? 'TRAINED ML MODEL ✓' : 'FALLBACK HEURISTIC MODEL ⚠️'}`);
+      console.log(`Model name: ${tfModel.name || 'unnamed'}`);
       
       // Verify model by making a test prediction
       try {
-        // Create a test tensor with sample data that matches the expected format
-        // These values represent typical posture features:
-        // [distNoseShoulders, ratioNoseShoulders, neckTiltAngle, distLeftEarNose, distRightEarNose, angleLeftShoulder, angleRightShoulder]
-        
-        // Sample data for different posture qualities
-        const goodPostureData = [0.15, 0.5, 160, 0.2, 0.2, 45, 45];   // Good posture example
-        const mediumPostureData = [0.18, 0.6, 140, 0.25, 0.25, 40, 40]; // Medium posture example
-        const badPostureData = [0.25, 0.8, 120, 0.3, 0.3, 30, 30];    // Bad posture example
+        // Create a test tensor with sample data
+        const goodPostureData = [0.17, 0.4, 170, 0.15, 0.15, 50, 50];  // Excellent posture
+        const mediumPostureData = [0.13, 0.6, 150, 0.22, 0.22, 40, 40]; // Medium posture
+        const badPostureData = [0.08, 0.85, 120, 0.3, 0.3, 25, 25];     // Very bad posture
         
         // Create test tensors
         const testTensor = tf.tensor2d([
@@ -1168,19 +1065,35 @@ If you're seeing this message, the app will use a fallback model which may not b
         console.log("- Medium posture sample score:", Math.round(testValues[1] * 100));
         console.log("- Bad posture sample score:", Math.round(testValues[2] * 100));
         
-        // Check if predictions are reasonable (not all zeros or all the same value)
+        // Check if predictions are reasonable
         const allSame = testValues[0] === testValues[1] && testValues[1] === testValues[2];
         const allZeros = testValues[0] === 0 && testValues[1] === 0 && testValues[2] === 0;
         
         if (allZeros) {
           console.warn("Model verification warning: All predictions are zero");
-          setError("Model verification warning: All predictions are zero. Using fallback scoring.");
+          setError(prevError => 
+            prevError ? 
+              prevError + " Model produces all zeros." : 
+              "Model verification warning: All predictions are zero."
+          );
         } else if (allSame) {
           console.warn("Model verification warning: All predictions have the same value");
-          setError("Model verification warning: All predictions have the same value. Using fallback scoring.");
+          setError(prevError => 
+            prevError ? 
+              prevError + " Model produces identical values for different postures." : 
+              "Model verification warning: Predictions are identical for different postures."
+          );
         } else {
           console.log("Model verification successful: Predictions show variation as expected");
-          setError(null);
+          
+          // Only clear the error if it's about model verification
+          if (isUsingTrainedModel) {
+            setError(prevError => 
+              prevError && prevError.includes("verification") ? 
+                null : 
+                prevError
+            );
+          }
         }
         
         // Clean up test tensors
