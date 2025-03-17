@@ -359,8 +359,9 @@ function Home() {
       });
       
       if (poses && poses.length > 0) {
-        // Draw the pose
-        drawPose(poses[0], ctx, videoWidth, videoHeight);
+        // KEYPOINT VISUALIZATION - DISABLED FOR PRODUCTION
+        // Uncomment the line below to show body mapping points
+        // drawPose(poses[0], ctx, videoWidth, videoHeight);
         
         // Calculate posture score
         const score = calculatePostureScore(poses[0], videoWidth, videoHeight);
@@ -1171,7 +1172,10 @@ function Home() {
                   style={{ position: 'absolute', top: 0, left: 0 }}
                 />
                 <div className="webcam-overlay">
-                  {/* Remove the duplicate posture score display */}
+                  <div className="posture-tracking-indicator">
+                    <div className="tracking-status-dot"></div>
+                    <span>Analyzing posture</span>
+                  </div>
                 </div>
               </div>
             </div>
