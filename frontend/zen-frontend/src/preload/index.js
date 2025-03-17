@@ -7,7 +7,7 @@ const hwid = machineIdSync()
 console.log('Generated HWID:', hwid)
 
 // API endpoints
-const API_URL = 'https://zen-posture-df6c9e802988.herokuapp.com/api'
+const API_URL = 'http://localhost:5001/api'
 
 // User state
 let currentUser = null
@@ -46,13 +46,20 @@ const userAPI = {
         throw new Error('User not initialized')
       }
 
-      console.log('Adding posture session:', sessionData)
+      // Ensure data has the correct structure
+      const dataToSend = {
+        score: sessionData.score,
+        timestamp: sessionData.timestamp || new Date(),
+        duration: sessionData.duration || 0
+      };
+
+      console.log('Adding posture session:', dataToSend)
       const response = await fetch(`${API_URL}/posture-sessions/${currentUser.HWID}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(sessionData)
+        body: JSON.stringify(dataToSend)
       })
 
       if (!response.ok) {
@@ -81,12 +88,12 @@ const userAPI = {
         throw new Error(`Failed to fetch sessions: ${response.status}`)
       }
 
-      const sessions = await response.json()
-      console.log('Retrieved today\'s sessions:', sessions)
-      return sessions
+      const data = await response.json()
+      console.log('Retrieved today\'s sessions:', data)
+      return data.sessions || [] // Make sure we're returning the sessions array
     } catch (error) {
       console.error('Failed to get today\'s sessions:', error)
-      throw error
+      return [] // Return empty array on error
     }
   },
 
@@ -106,7 +113,7 @@ const userAPI = {
       }
 
       const yearParam = year ? `?year=${year}` : '';
-      console.log(`Fetching monthly statistics for ${year ? 'year ' + year : 'all years'}`)
+      console.log(`Fetching monthly statistics for ${year ? 'year ' + year : 'current year'}`)
       const response = await fetch(`${API_URL}/statistics/${currentUser.HWID}/monthly${yearParam}`)
       
       if (!response.ok) {

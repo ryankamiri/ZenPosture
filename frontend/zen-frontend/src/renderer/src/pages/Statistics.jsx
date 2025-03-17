@@ -94,7 +94,7 @@ function Statistics() {
   // Check if the API server is online
   const checkServerStatus = async () => {
     try {
-      const testEndpoint = 'https://zen-posture-df6c9e802988.herokuapp.com/api/test';
+      const testEndpoint = 'http://localhost:5001';
       const response = await fetch(testEndpoint, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -137,13 +137,62 @@ function Statistics() {
 
   const loadDailySessions = async () => {
     try {
-      const data = await window.api.getTodaySessions();
-      const sortedData = data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      setDailySessions(sortedData);
-      return sortedData;
-    } catch (err) {
-      console.error('Failed to load daily sessions:', err);
+      const response = await window.api.getTodaySessions();
+      
+      // Handle the new format from our API
+      const sessions = Array.isArray(response) ? response : (response.sessions || []);
+      
+      // Sort sessions by timestamp
+      const sortedSessions = [...sessions].sort((a, b) => {
+        return new Date(a.timestamp) - new Date(b.timestamp);
+      });
+      
+      setDailySessions(sortedSessions);
+      
+      // Calculate progression metrics based on sessions
+      if (sortedSessions.length >= 2) {
+        const firstSession = sortedSessions[0];
+        const lastSession = sortedSessions[sortedSessions.length - 1];
+        
+        // Use the score field instead of postureScore
+        const startScore = firstSession.score || 0;
+        const endScore = lastSession.score || 0;
+        
+        // Calculate the change and percentage
+        const scoreChange = endScore - startScore;
+        const percentChange = startScore > 0 
+          ? Math.round((scoreChange / startScore) * 100) 
+          : 0;
+        
+        // Determine trend
+        let trend = 'stable';
+        if (percentChange > 5) trend = 'improving';
+        if (percentChange < -5) trend = 'deteriorating';
+        
+        // Set progression metrics
+        setProgressionMetrics({
+          trend,
+          percentChange,
+          description: getProgressionDescription(trend, percentChange)
+        });
+      }
+      
+      return sortedSessions;
+    } catch (error) {
+      console.error('Error loading daily sessions:', error);
+      setApiError(true);
       return [];
+    }
+  };
+
+  // Helper function for progression description
+  const getProgressionDescription = (trend, percentChange) => {
+    if (trend === 'improving') {
+      return `Your posture has improved by ${percentChange}% today`;
+    } else if (trend === 'deteriorating') {
+      return `Your posture has declined by ${Math.abs(percentChange)}% today`;
+    } else {
+      return 'Your posture has been consistent today';
     }
   };
 
@@ -889,14 +938,6 @@ function Statistics() {
             </div>
           </div>
         </>
-      )}
-
-      {/* Server Status Indicator */}
-      {serverStatus !== 'unknown' && (
-        <div className={`server-status ${serverStatus}`}>
-          <div className="server-status-icon"></div>
-          <span>Server {serverStatus === 'online' ? 'Connected' : 'Disconnected'}</span>
-        </div>
       )}
     </div>
   )
