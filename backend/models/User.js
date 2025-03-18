@@ -11,6 +11,10 @@ const postureSessionSchema = new mongoose.Schema({
         min: 0,
         max: 100,
         default: 0
+    },
+    duration: {
+        type: Number,
+        default: 0
     }
 });
 
@@ -34,14 +38,14 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-    
+
 }, { strict: true });
 
 // Helper method to get today's posture sessions
 userSchema.methods.getTodaySessions = function() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     return this.postureSessions.filter(session => {
         const sessionDate = new Date(session.timestamp);
         return sessionDate >= today;
@@ -52,7 +56,8 @@ userSchema.methods.getTodaySessions = function() {
 userSchema.methods.addPostureSession = function(sessionData) {
     this.postureSessions.push({
         timestamp: Date.now(),
-        score: sessionData.score
+        score: sessionData.score,
+        duration: sessionData.duration
     });
     return this.save();
 };
@@ -71,4 +76,4 @@ userSchema.statics.findOrCreateByHWID = async function(hwid) {
 };
 
 const User = mongoose.model('User', userSchema);
-module.exports = User; 
+module.exports = User;

@@ -86,7 +86,7 @@ app.post('/api/users/init', async (req, res) => {
     }
 });
 
-// Posture Session Routes
+// Posture Session Routes - Fix to handle the correct session format
 app.post('/api/posture-sessions/:hwid', async (req, res) => {
     try {
         const user = await User.findOne({ HWID: req.params.hwid });
@@ -94,14 +94,35 @@ app.post('/api/posture-sessions/:hwid', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        await user.addPostureSession(req.body);
+        // Make sure we have the required fields
+        if (!req.body.score && req.body.score !== 0) {
+            return res.status(400).json({ error: 'Posture score is required' });
+        }
+
+        // Create new session with current timestamp if not provided
+        const newSession = {
+            score: req.body.score,
+            timestamp: req.body.timestamp || new Date(),
+            duration: req.body.duration || 0
+        };
+
+        // Initialize postureSessions as array if it doesn't exist
+        if (!user.postureSessions) {
+            user.postureSessions = [];
+        }
+        
+        // Add the new session
+        user.postureSessions.push(newSession);
+        await user.save();
+        
         res.status(201).json({ message: 'Posture session added successfully' });
     } catch (error) {
+        console.error('Error adding posture session:', error);
         res.status(400).json({ error: error.message });
     }
 });
 
-// Get today's sessions
+// Get today's sessions - Fixed to work with timestamp-based array
 app.get('/api/posture-sessions/:hwid', async (req, res) => {
     try {
         const user = await User.findOne({ HWID: req.params.hwid });
@@ -109,14 +130,28 @@ app.get('/api/posture-sessions/:hwid', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         
-        const todaySessions = user.getTodaySessions();
-        res.json(todaySessions);
+        // Check if user has posture sessions
+        if (!user.postureSessions || !Array.isArray(user.postureSessions)) {
+            return res.json({ sessions: [] });
+        }
+        
+        // Get today's sessions based on timestamp
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const todaySessions = user.postureSessions.filter(session => {
+            const sessionDate = new Date(session.timestamp);
+            return sessionDate >= today;
+        });
+        
+        res.json({ sessions: todaySessions });
     } catch (error) {
+        console.error('Error getting today\'s sessions:', error);
         res.status(400).json({ error: error.message });
     }
 });
 
-// Statistics Route
+// Statistics Route - Daily stats fixed for timestamp-based array
 app.get('/api/statistics/:hwid', async (req, res) => {
     try {
         const user = await User.findOne({ HWID: req.params.hwid });
@@ -124,12 +159,30 @@ app.get('/api/statistics/:hwid', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        const todaySessions = user.getTodaySessions();
+        // Check if user has posture sessions
+        if (!user.postureSessions || !Array.isArray(user.postureSessions)) {
+            return res.json({ 
+                dailyStats: {
+                    averagePostureScore: 0,
+                    totalPostureTime: 0,
+                    sessionsCount: 0
+                }
+            });
+        }
+        
+        // Get today's sessions based on timestamp
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const todaySessions = user.postureSessions.filter(session => {
+            const sessionDate = new Date(session.timestamp);
+            return sessionDate >= today;
+        });
         
         // Calculate statistics
-        const totalDuration = todaySessions.reduce((sum, session) => sum + session.duration, 0);
+        const totalDuration = todaySessions.reduce((sum, session) => sum + (session.duration || 0), 0);
         const averageScore = todaySessions.length > 0
-            ? todaySessions.reduce((sum, session) => sum + session.postureScore, 0) / todaySessions.length
+            ? todaySessions.reduce((sum, session) => sum + (session.score || 0), 0) / todaySessions.length
             : 0;
 
         res.json({
@@ -140,6 +193,7 @@ app.get('/api/statistics/:hwid', async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('Error getting daily statistics:', error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -152,6 +206,7 @@ const organizeSessionsByMonth = (postureSessions) => {
     // Loop through each day of the week
     for (const day in postureSessions) {
         const sessions = postureSessions[day] || [];
+        console.log(sessions);
         console.log(`[AGGREGATE] Processing ${sessions.length} sessions for ${day}`);
         
         // Process each session in this day
@@ -301,38 +356,77 @@ app.get('/api/statistics/:hwid/monthly', async (req, res) => {
         }
         
         // Check if user has posture sessions
-        if (!user.postureSessions) {
-            console.log(`[API] User has no posture sessions data`);
+        if (!user.postureSessions || !Array.isArray(user.postureSessions) || user.postureSessions.length === 0) {
             return res.json({ 
-                monthlyStats: {},
-                message: 'No posture data available'
+                monthlyStats: {}
             });
         }
         
-        // Calculate monthly stats
-        const monthlyStats = organizeSessionsByMonth(user.postureSessions);
+        const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
         
-        // Filter by year if provided
-        const { year } = req.query;
-        let filteredStats = monthlyStats;
+        // Organize sessions by month
+        const monthlyStats = {};
         
-        if (year && !isNaN(parseInt(year))) {
-            console.log(`[API] Filtering results by year: ${year}`);
-            filteredStats = Object.keys(monthlyStats)
-                .filter(key => key.startsWith(year))
-                .reduce((obj, key) => {
-                    obj[key] = monthlyStats[key];
-                    return obj;
-                }, {});
-        }
+        // Process each session to organize by month
+        user.postureSessions.forEach(session => {
+            if (!session.timestamp) return;
+            
+            const sessionDate = new Date(session.timestamp);
+            const sessionYear = sessionDate.getFullYear();
+            
+            // Skip if not in requested year
+            if (sessionYear !== year) return;
+            
+            const month = sessionDate.getMonth() + 1; // 1-12
+            const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+            
+            // Initialize month data if needed
+            if (!monthlyStats[monthKey]) {
+                monthlyStats[monthKey] = {
+                    year,
+                    month,
+                    totalSessions: 0,
+                    totalScore: 0,
+                    averageScore: 0,
+                    totalDuration: 0,
+                    lowestScore: Infinity,
+                    highestScore: 0,
+                    sessionCount: 0
+                };
+            }
+            
+            // Update month stats
+            const monthData = monthlyStats[monthKey];
+            monthData.totalSessions++;
+            monthData.sessionCount++;
+            monthData.totalScore += session.score || 0;
+            monthData.totalDuration += session.duration || 0;
+            
+            // Track highest and lowest scores
+            if ((session.score || 0) > monthData.highestScore) {
+                monthData.highestScore = session.score || 0;
+            }
+            if ((session.score || 0) < monthData.lowestScore) {
+                monthData.lowestScore = session.score || 0;
+            }
+            
+            // Recalculate average
+            monthData.averageScore = monthData.totalScore / monthData.totalSessions;
+        });
         
-        console.log(`[API] Successfully calculated monthly stats: ${Object.keys(filteredStats).length} months found`);
+        // Fix any months with no lowest score
+        Object.values(monthlyStats).forEach(month => {
+            if (month.lowestScore === Infinity) {
+                month.lowestScore = 0;
+            }
+        });
+        
         res.json({ 
-            monthlyStats: filteredStats,
-            totalMonths: Object.keys(filteredStats).length
+            monthlyStats,
+            year
         });
     } catch (error) {
-        console.error('[API] Error calculating monthly stats:', error);
+        console.error('Error getting monthly statistics:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -563,6 +657,76 @@ app.get('/api/debug/user/:hwid', async (req, res) => {
             postureSessionsType: typeof user.postureSessions
         });
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Fixed Daily Data endpoint for specific month
+app.get('/api/statistics/:hwid/daily', async (req, res) => {
+    try {
+        const user = await User.findOne({ HWID: req.params.hwid });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check if required parameters are provided
+        if (!req.query.year || !req.query.month) {
+            return res.status(400).json({ error: 'Year and month parameters are required' });
+        }
+
+        const year = parseInt(req.query.year);
+        const month = parseInt(req.query.month);
+        
+        // Validate year and month
+        if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+            return res.status(400).json({ error: 'Invalid year or month' });
+        }
+        
+        // Check if user has posture sessions
+        if (!user.postureSessions || !Array.isArray(user.postureSessions) || user.postureSessions.length === 0) {
+            return res.json({ dailyData: [] });
+        }
+        
+        // Group sessions by day of the month
+        const dailyData = {};
+        
+        // Filter and group sessions for the specified month
+        user.postureSessions.forEach(session => {
+            if (!session.timestamp) return;
+            
+            const sessionDate = new Date(session.timestamp);
+            const sessionYear = sessionDate.getFullYear();
+            const sessionMonth = sessionDate.getMonth() + 1; // 1-12
+            
+            // Skip if not in requested year/month
+            if (sessionYear !== year || sessionMonth !== month) return;
+            
+            const day = sessionDate.getDate();
+            const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            
+            // Initialize day data if needed
+            if (!dailyData[day]) {
+                dailyData[day] = {
+                    day,
+                    date: dateStr,
+                    totalScore: 0,
+                    sessionCount: 0,
+                    averageScore: 0
+                };
+            }
+            
+            // Update day data
+            dailyData[day].totalScore += session.score || 0;
+            dailyData[day].sessionCount++;
+            dailyData[day].averageScore = dailyData[day].totalScore / dailyData[day].sessionCount;
+        });
+        
+        // Convert to array and sort by day
+        const result = Object.values(dailyData).sort((a, b) => a.day - b.day);
+        
+        res.json({ dailyData: result });
+    } catch (error) {
+        console.error('Error getting daily data for month:', error);
         res.status(500).json({ error: error.message });
     }
 });
