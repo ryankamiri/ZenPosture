@@ -6,6 +6,7 @@ import About from './pages/About'
 import Statistics from './pages/Statistics'
 import Exercises from './pages/Exercises'
 import { useInitializeUser } from './hooks/useInitializeUser'
+import ThemeToggle from './components/ThemeToggle'
 
 function NavLink({ to, children, icon }) {
   const location = useLocation()
@@ -41,6 +42,9 @@ function AppContent() {
           <NavLink to="/" icon={<BiHome className="nav-icon" />}>Home</NavLink>
           <NavLink to="/statistics" icon={<BiLineChart className="nav-icon" />}>Statistics</NavLink>
           <NavLink to="/about" icon={<BiInfoCircle className="nav-icon" />}>About</NavLink>
+          <div className="nav-theme-toggle">
+            <ThemeToggle />
+          </div>
         </div>
       </nav>
       

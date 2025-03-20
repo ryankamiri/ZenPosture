@@ -440,19 +440,19 @@ function Statistics() {
     if (activePeriod === 'daily') {
       return {
         labels: dailySessions.map(session => formatTime(session.timestamp)),
-        datasets: [{
-          label: 'Posture Score',
+    datasets: [{
+      label: 'Posture Score',
           data: dailySessions.map(session => session.score),
           borderColor: '#6c5ce7',
           backgroundColor: 'rgba(108, 92, 231, 0.15)',
           fill: true,
           tension: 0.3,
           pointRadius: 6,
-          pointBackgroundColor: '#fff',
+          pointBackgroundColor: '#6c5ce7',
           pointBorderColor: '#6c5ce7',
           pointBorderWidth: 2,
           pointHoverRadius: 8,
-          pointHoverBackgroundColor: '#fff',
+          pointHoverBackgroundColor: '#6c5ce7',
           pointHoverBorderColor: '#6c5ce7',
           pointHoverBorderWidth: 3
         }]
@@ -472,11 +472,11 @@ function Statistics() {
           fill: true,
           tension: 0.3,
           pointRadius: 4,
-          pointBackgroundColor: '#fff',
+          pointBackgroundColor: '#6c5ce7',
           pointBorderColor: '#6c5ce7',
           pointBorderWidth: 2,
           pointHoverRadius: 6,
-          pointHoverBackgroundColor: '#fff',
+          pointHoverBackgroundColor: '#6c5ce7',
           pointHoverBorderColor: '#6c5ce7',
           pointHoverBorderWidth: 3
         }]
@@ -491,19 +491,19 @@ function Statistics() {
         datasets: [{
           label: 'Monthly Average Score',
           data: validMonths.map(month => month.averageScore),
-          borderColor: '#6c5ce7',
-          backgroundColor: 'rgba(108, 92, 231, 0.15)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 6,
-          pointBackgroundColor: '#fff',
-          pointBorderColor: '#6c5ce7',
-          pointBorderWidth: 2,
-          pointHoverRadius: 8,
-          pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: '#6c5ce7',
-          pointHoverBorderWidth: 3
-        }]
+      borderColor: '#6c5ce7',
+      backgroundColor: 'rgba(108, 92, 231, 0.15)',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 6,
+      pointBackgroundColor: '#6c5ce7',
+      pointBorderColor: '#6c5ce7',
+      pointBorderWidth: 2,
+      pointHoverRadius: 8,
+      pointHoverBackgroundColor: '#6c5ce7',
+      pointHoverBorderColor: '#6c5ce7',
+      pointHoverBorderWidth: 3
+    }]
       };
     }
     
@@ -521,36 +521,36 @@ function Statistics() {
 
   const getChartOptions = () => {
     const baseOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
           display: activePeriod !== 'daily',
           position: 'top',
           labels: {
-            color: 'rgba(255, 255, 255, 0.8)',
+            color: 'var(--chart-text-color)',
             font: {
               size: 12
             },
             boxWidth: 15,
             padding: 15
           }
-        },
-        tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          padding: 12,
-          titleColor: '#fff',
-          bodyColor: '#fff',
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        padding: 12,
+        titleColor: '#fff',
+        bodyColor: '#fff',
           displayColors: activePeriod !== 'daily',
-          titleFont: {
-            size: 13,
-            weight: '500'
-          },
-          bodyFont: {
-            size: 14,
-            weight: '600'
-          },
-          callbacks: {
+        titleFont: {
+          size: 13,
+          weight: '500'
+        },
+        bodyFont: {
+          size: 14,
+          weight: '600'
+        },
+        callbacks: {
             title: (items) => {
               if (activePeriod === 'daily') return `Time: ${items[0].label}`;
               if (activePeriod === 'monthly') {
@@ -562,77 +562,77 @@ function Statistics() {
             label: (item) => {
               return `${item.dataset.label}: ${Math.round(item.raw)}%`;
             }
-          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: 100,
+        grid: {
+          color: 'var(--chart-grid-color)',
+          drawBorder: false
+        },
+        border: {
+          display: false
+        },
+        ticks: {
+          color: 'var(--chart-text-color)',
+          font: {
+            size: 12
+          },
+          padding: 10,
+          stepSize: 20
+        },
+        title: {
+          display: true,
+          text: 'Posture Score (%)',
+          color: 'var(--chart-title-color)',
+          font: {
+            size: 14,
+            weight: '500'
+          },
+          padding: { bottom: 15 }
         }
       },
-      scales: {
-        y: {
-          min: 0,
-          max: 100,
-          grid: {
-            color: 'rgba(255, 255, 255, 0.04)',
-            drawBorder: false
-          },
-          border: {
-            display: false
-          },
-          ticks: {
-            color: 'rgba(255, 255, 255, 0.6)',
-            font: {
-              size: 12
-            },
-            padding: 10,
-            stepSize: 20
-          },
-          title: {
-            display: true,
-            text: 'Posture Score (%)',
-            color: 'rgba(255, 255, 255, 0.9)',
-            font: {
-              size: 14,
-              weight: '500'
-            },
-            padding: { bottom: 15 }
-          }
+      x: {
+        grid: {
+          display: false
         },
-        x: {
-          grid: {
-            display: false
+        border: {
+          display: false
+        },
+        ticks: {
+          color: 'var(--chart-text-color)',
+          font: {
+            size: 12
           },
-          border: {
-            display: false
-          },
-          ticks: {
-            color: 'rgba(255, 255, 255, 0.6)',
-            font: {
-              size: 12
-            },
-            padding: 10,
-            autoSkip: true,
+          padding: 10,
+          autoSkip: true,
             maxTicksLimit: activePeriod === 'monthly' ? 31 : (activePeriod === 'yearly' ? 12 : 8)
-          },
-          title: {
-            display: true,
+        },
+        title: {
+          display: true,
             text: activePeriod === 'daily' ? 'Time' : 
                   activePeriod === 'monthly' ? 'Day of Month' : 
                   'Month',
-            color: 'rgba(255, 255, 255, 0.9)',
-            font: {
-              size: 14,
-              weight: '500'
-            },
-            padding: { top: 15 }
-          }
-        }
-      },
-      layout: {
-        padding: {
-          top: 20,
-          right: 20,
-          bottom: 20,
-          left: 10
+          color: 'var(--chart-title-color)',
+          font: {
+            size: 14,
+            weight: '500'
+          },
+          padding: { top: 15 }
         }
       }
+    },
+    layout: {
+      padding: {
+        top: 20,
+        right: 20,
+        bottom: 20,
+        left: 10
+      }
+    }
     };
     
     // For daily view, add rotation to x-axis labels
@@ -894,49 +894,49 @@ function Statistics() {
               </div>
               <p>{progressionMetrics.description}</p>
             </div>
-          </div>
+      </div>
 
-          <div className="features-grid">
-            {/* Chart Card */}
-            <div className="feature-card">
-              <div className="feature-icon">
-                <BiTrendingUp />
-              </div>
-              <h3>Average Score</h3>
-              <div className="stat-value">{stats.avgScore}%</div>
+      <div className="features-grid">
+        {/* Chart Card */}
+        <div className="feature-card">
+          <div className="feature-icon">
+            <BiTrendingUp />
+          </div>
+          <h3>Average Score</h3>
+          <div className="stat-value">{stats.avgScore}%</div>
               <p>{stats.periodLabel}'s average posture score</p>
-            </div>
+        </div>
 
-            {/* Sessions Card */}
-            <div className="feature-card">
-              <div className="feature-icon">
-                <BiBody />
-              </div>
-              <h3>Total Sessions</h3>
-              <div className="stat-value">{stats.totalSessions}</div>
-              <p>Number of sessions in {stats.periodLabel.toLowerCase()}</p>
-            </div>
+        {/* Sessions Card */}
+        <div className="feature-card">
+          <div className="feature-icon">
+            <BiBody />
           </div>
+          <h3>Total Sessions</h3>
+          <div className="stat-value">{stats.totalSessions}</div>
+              <p>Number of sessions in {stats.periodLabel.toLowerCase()}</p>
+        </div>
+      </div>
 
-          {/* Chart Section Below */}
-          <div className="about-section">
-            <div className="feature-card">
+      {/* Chart Section Below */}
+      <div className="about-section">
+        <div className="feature-card">
               <h2>
                 {activePeriod === 'daily' ? 'Today\'s Timeline' : 
                  activePeriod === 'monthly' ? `${new Date(selectedYear, selectedMonth - 1).toLocaleString('default', { month: 'long' })} ${selectedYear} Daily Averages` : 
                  `${selectedYear} Monthly Averages`}
               </h2>
-              <div className="chart-container">
+          <div className="chart-container">
                 {chartData.labels.length > 0 ? (
-                  <Line data={chartData} options={chartOptions} />
+            <Line data={chartData} options={chartOptions} />
                 ) : (
                   <div className="no-data-message">
                     <p>No data available for this period.</p>
                   </div>
                 )}
-              </div>
-            </div>
           </div>
+        </div>
+      </div>
         </>
       )}
     </div>

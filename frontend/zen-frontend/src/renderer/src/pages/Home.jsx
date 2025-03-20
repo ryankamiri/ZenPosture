@@ -3,6 +3,7 @@ import { IoNotifications, IoNotificationsOff } from 'react-icons/io5'
 import { BiBody } from 'react-icons/bi'
 import { FiActivity, FiClock, FiCheckCircle, FiPlus, FiPlusCircle } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
+import ThemeToggle from '../components/ThemeToggle'
 
 import * as tf from "@tensorflow/tfjs";
 import * as poseDetection from "@tensorflow-models/pose-detection";
@@ -157,14 +158,14 @@ function Home() {
         console.log("TensorFlow model not loaded yet");
         return postureScoreRef.current; // Return previous score
       }
-
+  
       try {
         // Create a map of keypoints for easier access (similar to the sample code)
-        const kpMap = {};
+      const kpMap = {};
         
         for (const kp of pose.keypoints) {
           if (kp.score > 0.3) { // Only use keypoints with good confidence
-            kpMap[kp.name] = kp;
+        kpMap[kp.name] = kp;
           }
         }
         
@@ -184,71 +185,71 @@ function Home() {
         }
     
         // Normalize function - same as sample code
-        function norm(name) {
-          return {
-            x: kpMap[name].x / videoWidth,
-            y: kpMap[name].y / videoHeight
-          };
-        }
+      function norm(name) {
+        return {
+          x: kpMap[name].x / videoWidth,
+          y: kpMap[name].y / videoHeight
+        };
+      }
         
         // Extract normalized keypoints - identical to sample code
-        const nose = norm("nose");
-        const lsho = norm("left_shoulder");
-        const rsho = norm("right_shoulder");
-        const lear = norm("left_ear");
-        const rear = norm("right_ear");
-      
+      const nose = norm("nose");
+      const lsho = norm("left_shoulder");
+      const rsho = norm("right_shoulder");
+      const lear = norm("left_ear");
+      const rear = norm("right_ear");
+    
         // Calculate midpoint between shoulders - identical to sample code
-        const msho = {
-          x: (lsho.x + rsho.x) / 2,
-          y: (lsho.y + rsho.y) / 2
-        };
-      
+      const msho = {
+        x: (lsho.x + rsho.x) / 2,
+        y: (lsho.y + rsho.y) / 2
+      };
+    
         // Calculate features exactly like in the sample code
-        const distNoseShoulders = distance2D(nose.x, nose.y, msho.x, msho.y);
+      const distNoseShoulders = distance2D(nose.x, nose.y, msho.x, msho.y);
         const distShoulders = distance2D(lsho.x, lsho.y, rsho.x, rsho.y);
-        const ratioNoseShoulders = distShoulders > 0 
-          ? distNoseShoulders / distShoulders 
-          : 0;
-      
-        const neckTiltAngle = angleABC(lear.x, lear.y, nose.x, nose.y, rear.x, rear.y);
+      const ratioNoseShoulders = distShoulders > 0 
+        ? distNoseShoulders / distShoulders 
+        : 0;
+    
+      const neckTiltAngle = angleABC(lear.x, lear.y, nose.x, nose.y, rear.x, rear.y);
         const distLeftEarNose = distance2D(lear.x, lear.y, nose.x, nose.y);
-        const distRightEarNose = distance2D(rear.x, rear.y, nose.x, nose.y);
+      const distRightEarNose = distance2D(rear.x, rear.y, nose.x, nose.y);
         const angleLeftShoulder = angleABC(lear.x, lear.y, lsho.x, lsho.y, nose.x, nose.y);
-        const angleRightShoulder = angleABC(rear.x, rear.y, rsho.x, rsho.y, nose.x, nose.y);
-      
+      const angleRightShoulder = angleABC(rear.x, rear.y, rsho.x, rsho.y, nose.x, nose.y);
+    
         // Create feature vector like in the sample code
-        const featVec = [
-          distNoseShoulders,
-          ratioNoseShoulders,
-          neckTiltAngle,
-          distLeftEarNose,
-          distRightEarNose,
-          angleLeftShoulder,
-          angleRightShoulder
-        ];
-      
+      const featVec = [
+        distNoseShoulders,
+        ratioNoseShoulders,
+        neckTiltAngle,
+        distLeftEarNose,
+        distRightEarNose,
+        angleLeftShoulder,
+        angleRightShoulder
+      ];
+    
         // Log features occasionally for debugging
         if (Math.random() < 0.01) {
           console.log("Feature vector:", featVec);
         }
       
         // Make prediction using the model - simplified like in the sample code
-        try {
-          const xs = tf.tensor2d([featVec], [1, 7]);
+      try {
+        const xs = tf.tensor2d([featVec], [1, 7]);
           
           // Make prediction
-          const output = tfModel.predict(xs);
+        const output = tfModel.predict(xs);
           
           // Get prediction value
-          const rawVal = output.dataSync()[0];
+        const rawVal = output.dataSync()[0];
           
           // More straightforward calculation like in sample code
           const intVal = Math.round(rawVal * 100);
           
           // Clean up tensors
-          xs.dispose();
-          output.dispose();
+        xs.dispose();
+        output.dispose();
           
           // Apply adaptive smoothing to allow more fluctuation while preventing wild jumps
           const prevScore = postureScoreRef.current;
@@ -301,7 +302,7 @@ function Home() {
       console.log("Pose detector not initialized yet");
       return;
     }
-    
+
     if (!webcamRef.current) {
       console.warn("Webcam reference not available");
       return;
@@ -380,7 +381,7 @@ function Home() {
           if (notificationsEnabled && score < postureThreshold) {
             const now = Date.now();
             if (now - lastNotificationTimeRef.current > 60000) { // Only notify once per minute
-              lastNotificationTimeRef.current = now;
+            lastNotificationTimeRef.current = now;
               new Notification('Posture Alert', {
                 body: `Your posture score is ${score}. Please correct your posture.`,
                 icon: '/logo.png'
@@ -438,17 +439,17 @@ function Home() {
         setIsLoading(true);
         setError(null);
         
-        // Initialize TensorFlow.js
+          // Initialize TensorFlow.js
         console.log("Initializing TensorFlow.js...");
-        await tf.ready();
+          await tf.ready();
         console.log("TensorFlow.js initialized");
-        
+          
         // Set backend to WebGL for better performance
-        try {
+          try {
           await tf.setBackend('webgl');
           console.log("Using WebGL backend");
-        } catch (e) {
-          console.warn("WebGL backend failed, falling back to CPU:", e);
+          } catch (e) {
+            console.warn("WebGL backend failed, falling back to CPU:", e);
           await tf.setBackend('cpu');
           console.log("Using CPU backend");
         }
@@ -852,7 +853,7 @@ function Home() {
 
     // Call initialize function
     initialize();
-    
+
     return () => {
       if (newDetector) {
         newDetector.dispose();
@@ -901,7 +902,7 @@ function Home() {
         detectPose();
       }, 100);
     }
-    
+
     return () => {
       if (id) {
         clearInterval(id);
@@ -1164,9 +1165,9 @@ function Home() {
                     setError(`Webcam access error: ${error.message || 'Unknown error'}`);
                   }}
                 />
-                <canvas 
-                  ref={canvasRef}
-                  className="webcam-view"
+                <canvas
+                  ref={canvasRef} 
+                  className="webcam-view" 
                   width={640}
                   height={480}
                   style={{ position: 'absolute', top: 0, left: 0 }}

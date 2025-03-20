@@ -1,0 +1,76 @@
+:root {
+  /* Dark Theme (Default) */
+  --primary-bg: #13111c;
+  --card-bg: #1e1e2e;
+  --primary-text: rgba(255, 255, 255, 0.95);
+  --secondary-text: rgba(255, 255, 255, 0.7);
+  --muted-text: rgba(255, 255, 255, 0.5);
+  --accent-color: #6c5ce7;
+  --card-background: #1e1e2e;
+  --background-color: #1a1b1e;
+  --text-color: #ffffff;
+  --text-muted: #a8a9b4;
+  --success-color: #00b894;
+  --nav-background: rgba(45, 46, 50, 0.95);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --card-hover-shadow: rgba(0, 0, 0, 0.2);
+  --nav-active-bg: rgba(108, 92, 231, 0.15);
+  --toggle-bg: rgba(255, 255, 255, 0.1);
+  --chart-bg: #1e1e2e;
+  --body-background: radial-gradient(
+    circle at top right,
+    rgba(108, 92, 231, 0.1),
+    transparent 50%
+  );
+  --webcam-header-bg: rgba(0, 0, 0, 0.2);
+  --overlay-bg: rgba(0, 0, 0, 0.3);
+  --stat-icon-bg: rgba(108, 92, 231, 0.1);
+  --button-bg-hover: rgba(255, 255, 255, 0.05);
+  --period-btn-text: rgba(255, 255, 255, 0.8);
+  --period-btn-bg: rgba(255, 255, 255, 0.08);
+  --period-btn-active-text: #ffffff;
+  --chart-text-color: rgba(255, 255, 255, 0.7);
+  --chart-grid-color: rgba(255, 255, 255, 0.04);
+  --chart-title-color: rgba(255, 255, 255, 0.9);
+}
+
+:root.light-theme {
+  /* Light Theme */
+  --primary-bg: #f5f7fa;
+  --card-bg: #ffffff;
+  --primary-text: rgba(0, 0, 0, 0.9);
+  --secondary-text: rgba(0, 0, 0, 0.7);
+  --muted-text: rgba(0, 0, 0, 0.5);
+  --accent-color: #6c5ce7;
+  --card-background: #ffffff;
+  --background-color: #f5f7fa;
+  --text-color: #333333;
+  --text-muted: #666666;
+  --success-color: #00b894;
+  --nav-background: rgba(255, 255, 255, 0.9);
+  --card-border: rgba(0, 0, 0, 0.1);
+  --card-hover-shadow: rgba(0, 0, 0, 0.1);
+  --nav-active-bg: rgba(108, 92, 231, 0.1);
+  --toggle-bg: rgba(0, 0, 0, 0.1);
+  --chart-bg: #ffffff;
+  --body-background: radial-gradient(
+    circle at top right,
+    rgba(108, 92, 231, 0.05),
+    transparent 70%
+  );
+  --webcam-header-bg: rgba(108, 92, 231, 0.05);
+  --overlay-bg: rgba(0, 0, 0, 0.1);
+  --stat-icon-bg: rgba(108, 92, 231, 0.1);
+  --button-bg-hover: rgba(0, 0, 0, 0.05);
+  --period-btn-text: #333333;
+  --period-btn-bg: rgba(0, 0, 0, 0.08);
+  --period-btn-active-text: #ffffff;
+  --chart-text-color: #333333;
+  --chart-grid-color: rgba(0, 0, 0, 0.1);
+  --chart-title-color: #333333;
+}
+
+/* Transition for theme changes */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+} 

@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import Webcam from 'react-webcam'
 import { BiCamera, BiReset } from 'react-icons/bi'
+import ThemeToggle from './ThemeToggle'
 
 function WebcamView() {
   const webcamRef = useRef(null)
@@ -14,9 +15,12 @@ function WebcamView() {
     <div className={`webcam-container ${isMinimized ? 'minimized' : ''}`}>
       <div className="webcam-header">
         <h3>Posture View</h3>
-        <button className="webcam-toggle" onClick={toggleMinimize}>
-          {isMinimized ? <BiCamera /> : <BiReset />}
-        </button>
+        <div className="webcam-controls">
+          <ThemeToggle />
+          <button className="webcam-toggle" onClick={toggleMinimize}>
+            {isMinimized ? <BiCamera /> : <BiReset />}
+          </button>
+        </div>
       </div>
       <div className="webcam-content">
         <Webcam
