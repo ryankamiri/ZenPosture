@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Line } from 'react-chartjs-2'
 import {
-  Chart as ChartJS,
+  Chart,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -16,7 +16,7 @@ import { BiTrendingUp, BiBody, BiCalendar, BiTimeFive, BiCalendarCheck, BiTrendi
 import { FiArrowUp, FiArrowDown } from 'react-icons/fi'
 
 // Register ChartJS components
-ChartJS.register(
+Chart.register(
   CategoryScale,
   LinearScale,
   PointElement,
@@ -40,6 +40,12 @@ function Statistics() {
     return currentMonth;
   })
   
+  // Add a chart reference to access the chart instance
+  const chartRef = useRef(null);
+  
+  // Add a refresh key to force chart re-renders
+  const [refreshKey, setRefreshKey] = useState(0);
+  
   // Data states
   const [dailySessions, setDailySessions] = useState([])
   const [monthlyStats, setMonthlyStats] = useState({})
@@ -59,6 +65,20 @@ function Statistics() {
     description: 'Not enough data to determine trend'
   })
 
+  // Function to check dark mode - moved outside to be reused
+  const isDarkModeActive = () => {
+    // Get computed style from document root to check background color
+    const computedStyle = getComputedStyle(document.documentElement);
+    const bgColor = computedStyle.getPropertyValue('--primary-bg').trim();
+    
+    // Dark backgrounds will have lower RGB values
+    // This provides a more reliable check than class names
+    return bgColor.includes('rgb(19') || // Check for dark value
+           bgColor.includes('#13') ||    // Check for hex dark value
+           !document.documentElement.classList.contains('light-theme');
+  };
+
+  
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
@@ -134,6 +154,25 @@ function Statistics() {
     // When active period changes, calculate progression metrics
     calculateProgressionMetrics();
   }, [activePeriod, dailySessions, monthlyStats, yearlyStats, monthlyDailyData, yearlyMonthlyData]);
+
+  // Use effect to set up theme change detection
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      // Increment the refresh key to force chart re-rendering
+      setRefreshKey(prev => prev + 1);
+      console.log("Theme change detected! Forcing chart refresh...");
+    });
+    
+    // Watch for class changes on documentElement (theme changes)
+    observer.observe(document.documentElement, { 
+      attributes: true,
+      attributeFilter: ['class'] 
+    });
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const loadDailySessions = async () => {
     try {
@@ -520,37 +559,58 @@ function Statistics() {
   };
 
   const getChartOptions = () => {
-    const baseOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
+    // Directly check if light-theme class exists on documentElement (root HTML)
+    const isLightMode = document.documentElement.classList.contains('light-theme');
+    
+    // HARDCODE the colors - don't use variables or CSS that might not be applied
+    // Pure white for dark mode, dark colors for light mode
+    const textColor = isLightMode ? '#333333' : '#FFFFFF';
+    const titleColor = isLightMode ? '#111111' : '#FFFFFF';
+    const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.2)';
+    
+    // Forcibly set Chart.js defaults
+    Chart.defaults.color = textColor;
+    
+    console.log("Chart colors:", {
+      isLightMode,
+      textColor,
+      titleColor,
+      chartDefaultColor: Chart.defaults.color
+    });
+    
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: textColor, // Global text color
+      plugins: {
+        legend: {
           display: activePeriod !== 'daily',
           position: 'top',
           labels: {
-            color: 'var(--chart-text-color)',
+            color: textColor,
             font: {
-              size: 12
+              size: 12,
+              weight: '500'
             },
             boxWidth: 15,
             padding: 15
           }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        padding: 12,
-        titleColor: '#fff',
-        bodyColor: '#fff',
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          padding: 12,
+          titleColor: '#fff',
+          bodyColor: '#fff',
           displayColors: activePeriod !== 'daily',
-        titleFont: {
-          size: 13,
-          weight: '500'
-        },
-        bodyFont: {
-          size: 14,
-          weight: '600'
-        },
-        callbacks: {
+          titleFont: {
+            size: 13,
+            weight: '500'
+          },
+          bodyFont: {
+            size: 14,
+            weight: '600'
+          },
+          callbacks: {
             title: (items) => {
               if (activePeriod === 'daily') return `Time: ${items[0].label}`;
               if (activePeriod === 'monthly') {
@@ -562,86 +622,76 @@ function Statistics() {
             label: (item) => {
               return `${item.dataset.label}: ${Math.round(item.raw)}%`;
             }
-        }
-      }
-    },
-    scales: {
-      y: {
-        min: 0,
-        max: 100,
-        grid: {
-          color: 'var(--chart-grid-color)',
-          drawBorder: false
-        },
-        border: {
-          display: false
-        },
-        ticks: {
-          color: 'var(--chart-text-color)',
-          font: {
-            size: 12
-          },
-          padding: 10,
-          stepSize: 20
-        },
-        title: {
-          display: true,
-          text: 'Posture Score (%)',
-          color: 'var(--chart-title-color)',
-          font: {
-            size: 14,
-            weight: '500'
-          },
-          padding: { bottom: 15 }
+          }
         }
       },
-      x: {
-        grid: {
-          display: false
-        },
-        border: {
-          display: false
-        },
-        ticks: {
-          color: 'var(--chart-text-color)',
-          font: {
-            size: 12
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          grid: {
+            color: gridColor,
+            drawBorder: false
           },
-          padding: 10,
-          autoSkip: true,
-            maxTicksLimit: activePeriod === 'monthly' ? 31 : (activePeriod === 'yearly' ? 12 : 8)
+          border: {
+            display: false
+          },
+          ticks: {
+            color: textColor, // Y-axis labels
+            font: {
+              size: 12,
+              weight: '500'
+            },
+            padding: 10,
+            stepSize: 20
+          },
+          title: {
+            display: true,
+            text: 'Posture Score (%)',
+            color: titleColor, // Y-axis title
+            font: {
+              size: 14,
+              weight: '600'
+            },
+            padding: { bottom: 15 }
+          }
         },
-        title: {
-          display: true,
+        x: {
+          grid: {
+            display: false
+          },
+          border: {
+            display: false
+          },
+          ticks: {
+            color: textColor, // X-axis labels
+            font: {
+              size: 12,
+              weight: '500'
+            },
+            padding: 10,
+            autoSkip: true,
+            maxTicksLimit: activePeriod === 'monthly' ? 31 : (activePeriod === 'yearly' ? 12 : 8)
+          },
+          title: {
+            display: true,
             text: activePeriod === 'daily' ? 'Time' : 
                   activePeriod === 'monthly' ? 'Day of Month' : 
                   'Month',
-          color: 'var(--chart-title-color)',
-          font: {
-            size: 14,
-            weight: '500'
-          },
-          padding: { top: 15 }
+            color: titleColor, // X-axis title
+            font: {
+              size: 14,
+              weight: '600'
+            },
+            padding: { top: 15 }
+          }
         }
+      },
+      animation: {
+        duration: 1000,
+        easing: 'easeOutQuad'
       }
-    },
-    layout: {
-      padding: {
-        top: 20,
-        right: 20,
-        bottom: 20,
-        left: 10
-      }
-    }
     };
-    
-    // For daily view, add rotation to x-axis labels
-    if (activePeriod === 'daily') {
-      baseOptions.scales.x.ticks.maxRotation = 45;
-      baseOptions.scales.x.ticks.minRotation = 45;
-    }
-    
-    return baseOptions;
   };
 
   const getStats = () => {
@@ -928,7 +978,12 @@ function Statistics() {
               </h2>
           <div className="chart-container">
                 {chartData.labels.length > 0 ? (
-            <Line data={chartData} options={chartOptions} />
+            <Line 
+              data={chartData} 
+              options={chartOptions}
+              key={`chart-${refreshKey}-${document.documentElement.classList.contains('light-theme') ? 'light' : 'dark'}`}
+              ref={chartRef}
+            />
                 ) : (
                   <div className="no-data-message">
                     <p>No data available for this period.</p>
