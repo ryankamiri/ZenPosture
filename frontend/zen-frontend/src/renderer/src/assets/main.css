@@ -2,14 +2,14 @@
 @import './theme.css';
 
 :root {
-  /* Colors */
-  --primary-bg: #13111c;
-  --card-bg: #1e1e2e;
+  /* Colors - Updated to match landing page */
+  --primary-bg: #0f172a; /* slate-900 instead of purple */
+  --card-bg: #1e293b; /* slate-800 instead of purple */
   --primary-text: rgba(255, 255, 255, 0.95);
   --secondary-text: rgba(255, 255, 255, 0.7);
   --muted-text: rgba(255, 255, 255, 0.5);
-  --accent-color: #3182ce;
-  --card-background: #1e1e2e;
+  --accent-color: #2563eb; /* blue-600 */
+  --card-background: #1e293b; /* slate-800 */
   
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -17,13 +17,13 @@
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-bold: 700;
-  --primary-color: #3182ce;
-  --primary-hover: #3893e7;
-  --secondary-color: #a8a9b4;
-  --background-color: #1a1b1e;
+  --primary-color: #2563eb; /* blue-600 */
+  --primary-hover: #1d4ed8; /* blue-700 */
+  --secondary-color: #94a3b8; /* slate-400 */
+  --background-color: #0f172a; /* slate-900 */
   --text-color: #ffffff;
-  --text-muted: #a8a9b4;
-  --success-color: #00b894;
+  --text-muted: #94a3b8; /* slate-400 */
+  --success-color: #10b981; /* emerald-500 */
   --nav-height: 60px;
   --card-border-radius: 16px;
 }
@@ -264,7 +264,7 @@ body {
 
 .nav-link.active {
   color: var(--text-color);
-  background-color: rgba(108, 92, 231, 0.15);
+  background-color: rgba(37, 99, 235, 0.15);
 }
 
 .nav-link.active .nav-icon {
@@ -1092,7 +1092,7 @@ canvas.webcam-view {
 .summary-icon {
   font-size: 2.5rem;
   color: var(--accent-color);
-  background: rgba(108, 92, 231, 0.1);
+  background: rgba(37, 99, 235, 0.1);
   padding: 1rem;
   border-radius: 16px;
 }
@@ -1632,8 +1632,8 @@ canvas.webcam-view {
 
 .test-button {
   padding: 1rem;
-  background: rgba(108, 92, 231, 0.1);
-  border: 1px solid rgba(108, 92, 231, 0.2);
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.2);
   border-radius: 8px;
   color: var(--primary-text);
   font-size: 0.9rem;
@@ -1646,8 +1646,8 @@ canvas.webcam-view {
 }
 
 .test-button:hover {
-  background: rgba(108, 92, 231, 0.2);
-  border-color: rgba(108, 92, 231, 0.3);
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(37, 99, 235, 0.3);
   transform: translateY(-1px);
 }
 
@@ -1780,31 +1780,37 @@ canvas.webcam-view {
 }
 
 .threshold-slider {
-  width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
   -webkit-appearance: none;
   appearance: none;
+  height: 4px;
+  background: var(--slider-bg); /* Simple gray background from theme */
+  border-radius: 4px;
   outline: none;
+  width: 100%;
 }
 
 .threshold-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
-  background: var(--accent-color);
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid white;
+  background: var(--slider-thumb); /* Blue from theme */
+  border: 2px solid var(--slider-thumb-border);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.threshold-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+.threshold-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--slider-thumb); /* Blue from theme */
+  border: 2px solid var(--slider-thumb-border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .threshold-description {
@@ -2149,24 +2155,24 @@ canvas.webcam-view {
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 50%;
-  background-color: #3182ce;
+  background-color: #2563eb;
   animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.7);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
   }
   
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(108, 92, 231, 0);
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, 0);
   }
   
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(108, 92, 231, 0);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
   }
 }
 
@@ -2223,4 +2229,82 @@ canvas.webcam-view {
     width: 32px;
     height: 32px;
   }
+}
+
+/* Simplified Slider Styling with Theme Variables */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--slider-bg); /* Simple gray background from theme */
+  border-radius: 4px;
+  outline: none;
+  margin: 10px 0;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--slider-thumb); /* Blue from theme */
+  border: 2px solid var(--slider-thumb-border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--slider-thumb); /* Blue from theme */
+  border: 2px solid var(--slider-thumb-border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]:focus {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); /* blue-600 with opacity */
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}
+
+/* Slider value styling */
+.slider-value {
+  display: inline-block;
+  background-color: var(--slider-value-bg);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  margin-left: 10px;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Threshold labels */
+.threshold-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+/* Slider container */
+.slider-container {
+  width: 100%;
+  padding: 10px 0;
 }
