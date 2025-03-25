@@ -74,7 +74,7 @@ export default function Home() {
             Zen Posture won the Health & Wellness category at HackNYU 2025 for its innovative approach to posture correction using AI.
           </p>
           <a 
-            href="https://devpost.com/software/zen-posture"
+            href="https://devpost.com/software/zenposture"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-6 inline-block px-6 py-3 bg-white text-blue-700 rounded-lg font-medium hover:bg-gray-100 transition-colors"
@@ -212,7 +212,7 @@ export default function Home() {
                 GitHub
               </a>
               <a 
-                href="https://devpost.com/software/zen-posture"
+                href="https://devpost.com/software/zenposture"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
