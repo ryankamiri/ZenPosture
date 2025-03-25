@@ -482,17 +482,17 @@ function Statistics() {
     datasets: [{
       label: 'Posture Score',
           data: dailySessions.map(session => session.score),
-          borderColor: '#6c5ce7',
-          backgroundColor: 'rgba(108, 92, 231, 0.15)',
+          borderColor: '#3182ce',
+          backgroundColor: 'rgba(92, 141, 231, 0.15)',
           fill: true,
           tension: 0.3,
           pointRadius: 6,
-          pointBackgroundColor: '#6c5ce7',
-          pointBorderColor: '#6c5ce7',
+          pointBackgroundColor: '#3182ce',
+          pointBorderColor: '#3182ce',
           pointBorderWidth: 2,
           pointHoverRadius: 8,
-          pointHoverBackgroundColor: '#6c5ce7',
-          pointHoverBorderColor: '#6c5ce7',
+          pointHoverBackgroundColor: '#3182ce',
+          pointHoverBorderColor: '#3182ce',
           pointHoverBorderWidth: 3
         }]
       };
@@ -506,17 +506,17 @@ function Statistics() {
         datasets: [{
           label: 'Daily Average Score',
           data: validDays.map(day => day.averageScore),
-          borderColor: '#6c5ce7',
-          backgroundColor: 'rgba(108, 92, 231, 0.15)',
+          borderColor: '#3182ce',
+          backgroundColor: 'rgba(92, 141, 231, 0.15)',
           fill: true,
           tension: 0.3,
           pointRadius: 4,
-          pointBackgroundColor: '#6c5ce7',
-          pointBorderColor: '#6c5ce7',
+          pointBackgroundColor: '#3182ce',
+          pointBorderColor: '#3182ce',
           pointBorderWidth: 2,
           pointHoverRadius: 6,
-          pointHoverBackgroundColor: '#6c5ce7',
-          pointHoverBorderColor: '#6c5ce7',
+          pointHoverBackgroundColor: '#3182ce',
+          pointHoverBorderColor: '#3182ce',
           pointHoverBorderWidth: 3
         }]
       };
@@ -530,17 +530,17 @@ function Statistics() {
         datasets: [{
           label: 'Monthly Average Score',
           data: validMonths.map(month => month.averageScore),
-      borderColor: '#6c5ce7',
-      backgroundColor: 'rgba(108, 92, 231, 0.15)',
+      borderColor: '#3182ce',
+      backgroundColor: 'rgba(92, 141, 231, 0.15)',
       fill: true,
       tension: 0.3,
       pointRadius: 6,
-      pointBackgroundColor: '#6c5ce7',
-      pointBorderColor: '#6c5ce7',
+      pointBackgroundColor: '#3182ce',
+      pointBorderColor: '#3182ce',
       pointBorderWidth: 2,
       pointHoverRadius: 8,
-      pointHoverBackgroundColor: '#6c5ce7',
-      pointHoverBorderColor: '#6c5ce7',
+      pointHoverBackgroundColor: '#3182ce',
+      pointHoverBorderColor: '#3182ce',
       pointHoverBorderWidth: 3
     }]
       };
@@ -552,8 +552,8 @@ function Statistics() {
       datasets: [{
         label: 'No Data',
         data: [],
-        borderColor: '#6c5ce7',
-        backgroundColor: 'rgba(108, 92, 231, 0.15)',
+        borderColor: '#3182ce',
+        backgroundColor: 'rgba(92, 141, 231, 0.15)',
       }]
     };
   };

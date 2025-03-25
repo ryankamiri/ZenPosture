@@ -8,7 +8,7 @@
   --primary-text: rgba(255, 255, 255, 0.95);
   --secondary-text: rgba(255, 255, 255, 0.7);
   --muted-text: rgba(255, 255, 255, 0.5);
-  --accent-color: #6c5ce7;
+  --accent-color: #3182ce;
   --card-background: #1e1e2e;
   
   /* Typography */
@@ -17,8 +17,8 @@
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-bold: 700;
-  --primary-color: #6c5ce7;
-  --primary-hover: #8067ff;
+  --primary-color: #3182ce;
+  --primary-hover: #3893e7;
   --secondary-color: #a8a9b4;
   --background-color: #1a1b1e;
   --text-color: #ffffff;
@@ -2149,7 +2149,7 @@ canvas.webcam-view {
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 50%;
-  background-color: #6c5ce7;
+  background-color: #3182ce;
   animation: pulse 1.5s infinite;
 }
 
