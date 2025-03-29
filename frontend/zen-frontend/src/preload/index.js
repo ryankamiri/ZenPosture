@@ -7,7 +7,7 @@ const hwid = machineIdSync()
 console.log('Generated HWID:', hwid)
 
 // API endpoints
-const API_URL = 'http://localhost:5001/api'
+const API_URL = 'https://zen-posture-df6c9e802988.herokuapp.com/api'
 
 // User state
 let currentUser = null

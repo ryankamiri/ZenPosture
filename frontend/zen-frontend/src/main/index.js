@@ -14,6 +14,7 @@ function createWindow() {
     width: 1024,
     height: 768,
     show: false,
+    title: "Zen Posture",
     autoHideMenuBar: true,
     ...(process.platform === 'linux' || process.platform === 'win32' ? { icon } : {}),
     webPreferences: {

@@ -114,7 +114,7 @@ function Statistics() {
   // Check if the API server is online
   const checkServerStatus = async () => {
     try {
-      const testEndpoint = 'http://localhost:5001';
+      const testEndpoint = 'https://zen-posture-df6c9e802988.herokuapp.com';
       const response = await fetch(testEndpoint, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
