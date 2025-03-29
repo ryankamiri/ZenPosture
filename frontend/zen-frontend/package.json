@@ -8,7 +8,7 @@
   "homepage": "https://electron-vite.org",
   "build": {
     "appId": "com.zenposture",
-    "productName": "ZenPosture",
+    "productName": "Zen Posture",
     "win": {
       "target": [
         "portable"
